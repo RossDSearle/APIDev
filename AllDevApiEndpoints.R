@@ -1,0 +1,232 @@
+
+machineName <- as.character(Sys.info()['nodename'])
+
+
+
+
+#* @apiTitle ASIS API Development
+#* @apiDescription Some web service endpoints to demonstrate some concepts
+
+
+
+#* Returns a regional soil mositure map as GeoTiff
+
+#* @param Date
+#* @param Region
+#* @tag Regional Soil Moisture Maps
+#' @html
+#' @get /SoilMoisture/GetMap
+apiGetRegionalSoilMoistureMap <- function(res, Region='SFS', Date=NULL){
+  
+  
+  date <- '01012017'
+  tryCatch({
+    
+    res$setHeader("content-disposition", paste0("attachment; filename=SM_", region, "_", date, ".tif"));
+    res$setHeader("Content-Type", "image/tiff")
+    
+    
+    fPath <- getRegionalSMMap(Region, Date)
+    print(fPath)
+    bin <- readBin(paste0(fPath), "raw", n=file.info(paste0(fPath))$size)
+
+    return(bin)
+   
+  }, error = function(res)
+  {
+    print(geterrmessage())
+    res$status <- 400
+    list(error=jsonlite::unbox(geterrmessage()))
+  })
+  
+}
+
+
+
+
+
+
+
+#* Returns a clipped vector funtional soil type map as a geoJson Stream
+
+#* @param PaddockID (Optional) - not needed for this demo
+#* @tag AgX_Demo_Download_Soil_Polygons
+#' @html
+#' @get /AgX/SoilMap/geojson
+apiGetFunctionalSoilMapGeojson <- function(res, paddockID){
+  
+   tryCatch({
+
+  polys <- getSoilMapBoundaries()
+  b <- as.character(geojson_json(polys))
+  b
+}, error = function(res)
+{
+  print(geterrmessage())
+  res$status <- 400
+  list(error=jsonlite::unbox(geterrmessage()))
+})
+  
+}
+
+
+
+#* Returns a clipped vector funtional soil type map as an image - NB Demo purposes only
+
+#* @param PaddockID (Optional) - not needed for this demo
+#* @tag AgX_Demo_Download_Soil_Polygons
+#* @png
+#* @get /AgX/SoilMap/image
+apiGetFunctionalSoilMapImage <- function(PaddockID){
+  
+  tryCatch({
+    
+    polys <- getSoilMapBoundaries()
+
+    plot(polys["Description"], main = 'Generic Soil Groups', key.pos = 4, pal = sf.colors(5), key.width = lcm(10), reset=FALSE)
+    plot(st_geometry(bdy), add=T,  type='l', border='green')
+    
+  }, error = function(res)
+  {
+    print(geterrmessage())
+    res$status <- 400
+    list(error=jsonlite::unbox(geterrmessage()))
+  })
+}
+
+
+#* Returns a clipped vector funtional soil type map as a zipped up shapefile
+#* @tag AgX_Demo_Download_Soil_Polygons
+#* @param PaddockID (Optional) - not needed for this demo
+#* @serializer contentType list(type="application/octet-stream")
+#* @get /AgX/SoilMap/zipfile
+apiGetFunctionalSoilMapZip <- function(res, PaddockID){
+  
+  tryCatch({
+    
+    polys <- getSoilMapBoundaries()
+    
+  #fname <- tempfile()
+  fname <- paste0(tempdir(), '/Soil_Boundaries_For_McDonalds')
+  write_sf(polys, paste0(fname, '.shp'))
+  
+  
+  origWD <- getwd()
+  setwd(dirname(fname))
+  fls <- list.files(dirname(fname), pattern = basename(fname), full.names = F)
+  zip(paste0(fname, '.zip'), fls)
+  
+  res$setHeader("Content-Disposition", "attachment; filename=soils.zip")
+  bin <- readBin(paste0(fname, '.zip'), "raw", n=file.info(paste0(fname, '.zip'))$size)
+  unlink(paste0(fname, '.zip'))
+  unlink(fls)
+  setwd(origWD)
+  
+  bin
+  
+    
+  }, error = function(res)
+  {
+    print(geterrmessage())
+    res$status <- 400
+    list(error=jsonlite::unbox(geterrmessage()))
+  })
+}
+
+
+
+#* Returns a set of optimised sampling locations as geojson
+#* @tag AgX_Demo_Optimised_Soil_Test_Sites 
+#* @param PaddockID (Optional) - not needed for this demo
+#* @param NumberOfSamples 
+#* @html
+#* @get /AgX/SoilTestLocations/GeoJson
+getSampleLocationsGeoJson <- function(res, PaddockID, NumberOfSamples = 8 ){
+  
+tryCatch({
+    
+    pts <- getSampleLocations(as.numeric(NumberOfSamples))
+    b <- geojsonio::geojson_json(pts)
+    b
+  }, error = function(res)
+  {
+    print(geterrmessage())
+    res$status <- 400
+    list(error=jsonlite::unbox(geterrmessage()))
+  })
+}
+
+#* Returns a set of optimised sampling locations as an image - NB Demo purposes only
+#* @tag AgX_Demo_Optimised_Soil_Test_Sites 
+#* @param PaddockID (Optional) - not needed for this demo
+#* @param NumberOfSamples 
+#* @png
+#* @get /AgX/SoilTestLocations/image
+getSampleLocationsImage <- function(res, PaddockID, NumberOfSamples = 8 ){
+  
+  tryCatch({
+    
+    pts <- getSampleLocations(as.numeric(NumberOfSamples))
+   
+    paths = list.files(  paste0(AgXRootDir, '/OptimisedSamples'), pattern = 'KOOKABURRA', full.names = T, recursive =T)
+    r <- raster(paste0(AgXRootDir, '/OptimisedSamples/KOOKABURRA_Wheat_2012_DryYield_clip.tif'))
+    plot(r)
+    points(as(pts, 'Spatial'), pch=19, col='blue', cex=2)
+    
+    
+  }, error = function(res)
+  {
+    print(geterrmessage())
+    res$status <- 400
+    list(error=jsonlite::unbox(geterrmessage()))
+  })
+}
+
+#* Returns a set of optimised sampling locations as a zipped up shapefile
+#* @tag AgX_Demo_Optimised_Soil_Test_Sites 
+#* @param PaddockID (Optional) - not needed for this demo
+#* @param NumberOfSamples 
+#* @serializer contentType list(type="application/octet-stream")
+#* @get /AgX/SoilTestLocations/zip
+getSampleLocationsZip <- function(res, PaddockID, NumberOfSamples = 8 ){
+  
+  tryCatch({
+    
+    pts <- getSampleLocations(as.numeric(NumberOfSamples))
+    
+    fname <- paste0(tempdir(), '/Sample_Locations_For_Kookaburra')
+    #fname <- tempfile()
+    write_sf(pts, paste0(fname, '.shp'))
+    
+    
+    
+    origWD <- getwd()
+    setwd(dirname(fname))
+    fls <- list.files(dirname(fname), pattern = basename(fname), full.names = F)
+    zip(paste0(fname, '.zip'), fls)
+    
+    res$setHeader("Content-Disposition", "attachment; filename=SoilSampleLocations.zip")
+    bin <- readBin(paste0(fname, '.zip'), "raw", n=file.info(paste0(fname, '.zip'))$size)
+    unlink(paste0(fname, '.zip'))
+    unlink(fls)
+    setwd(origWD)
+    
+    bin
+    
+    
+  }, error = function(res)
+  {
+    print(geterrmessage())
+    res$status <- 400
+    list(error=jsonlite::unbox(geterrmessage()))
+  })
+}
+
+
+
+
+
+
+
+
+
