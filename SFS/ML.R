@@ -4,28 +4,37 @@ source('C:/Users/sea084/Dropbox/RossRCode/Git/apiDev/SFS/SFSMethods.R')
 
 apiDevRootDir <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/apiDev'
 
-smipsPath <- 'C:/Projects/SMIPS/Rasters/CSIRO/Wetness-Index/Final'
-smipsfls <- list.files(smipsPath, full.names = T, recursive = T, pattern = '.tif')
-
+smipsPath1 <- 'E:/SMIPS/Wetness-Index/Final/2016'
+smipsfls1 <- list.files(smipsPath1, full.names = T, recursive = T, pattern = '.tif')
+smipsPath2 <- 'E:/SMIPS/Wetness-Index/Final/2017'
+smipsfls2 <- list.files(smipsPath2, full.names = T, recursive = T, pattern = '.tif')
+allsmips <- c(smipsfls1, smipsfls2)
 
 covsPath <- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev/SFS/Covariates'
 fls <- list.files(covsPath, full.names = T, recursive = T, pattern = '.tif')
 
 
-stk <- stack(fls)
 
+sfsreg <- raster(paste0(apiDevRootDir, '/SFS/Masks/SFS.tif'))
 outdf <- data.frame(longitude=numeric(), latitude=numeric(), ProbeVal=numeric(), SmipsVal=numeric())
 
-for (i in 1:length(smipsfls)) {
+smipsClipOut <- 'C:/Projects/SMIPS/SFS/regionalSM/data/SmipsClips'
+
+for (i in 1:length(allsmips)) {
   
   print(i)
   
-  fpath <- smipsfls[i]
+  fpath <- allsmips[i]
   fname <- basename(fpath)
   dt <- str_remove( str_split(fname, '_')[[1]][3], '.tif')
   
   r <- raster(fpath)
-  stk <- addLayer(stk, r)
+  cr <- crop(r, sfsreg)
+  plot(cr)
+  rcr <- resample(cr, sfsreg, filename = paste0(smipsClipOut, '/', basename(fpath)), overwrite=T)
+  
+  stk <- stack(c(rcr, fls))
+  #stk <- addLayer(stk, r)
   names(stk)
   
   #probeData <- getProbeDataForaDate(dt)
@@ -46,9 +55,9 @@ for (i in 1:length(smipsfls)) {
   
   coordinates(probeData) <-  ~Longitude+Latitude
   crs(probeData) <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
-  #plot(sites)
-  pts <- extract(r, probeData)
-  smipsDrill <- data.frame(longitude=probeData@coords[,1], latitude=probeData@coords[,2], ProbeVal=probeData@data$SM, SmipsVal=pts)
+
+  pts <- extract(stk, probeData)
+  smipsDrill <- data.frame(longitude=probeData@coords[,1], latitude=probeData@coords[,2], ProbeVal=probeData@data$SM, pts )
   
   outdf <- rbind(outdf, smipsDrill)
 

@@ -1,4 +1,21 @@
 
+
+machineName <- as.character(Sys.info()['nodename'])
+print(machineName)
+
+
+if(machineName == 'FANCY-DP'){
+  apiDevRootDir <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev'
+  conPath <<- 'C:/Projects/SMIPS/SFS/sfs.db'
+}else{
+  apiDevRootDir <<- '/srv/plumber/APIDev'
+  conPath <<- '/mnt/data/RegionalSoilMoisture/sfs.db'
+}
+
+
+source(paste0(apiDevRootDir, '/apiDev_Config.R'))
+
+
 machineName <- as.character(Sys.info()['nodename'])
 
 #* @apiTitle Ross' API Development Area

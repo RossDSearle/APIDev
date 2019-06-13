@@ -18,6 +18,8 @@ doq <- function(sql){
   return(res)
 }
 
+region <- 'SFS'
+dt <- '2016-10-01'
 
 getRegionalSMMap <- function(region, dt){
   
@@ -54,19 +56,20 @@ drillProbeLocations <- function(probeData, smipsR){
 }
   
 
-krigMap <- function(probeData, smipsR){
+krigMap <- function(probePts, smipsR){
   
-  mod1 = lm(probeData$SM ~ probeData$smips, data = probeData)
+  mod1 = lm(probePts$SM ~ probePts$smips, data = probePts)
   summary(mod1)
   
-  v <- suppressWarnings(automap::autofitVariogram(SM ~ smips,probeData))
+  v <- suppressWarnings(automap::autofitVariogram(SM ~ smips,probePts))
 
-  mMod <-  suppressWarnings(gstat(NULL, "moist", SM ~ smips, probeData , model = v$var_model))
+  mMod <-  suppressWarnings(gstat(NULL, "moist", SM ~ smips, probePts , model = v$var_model))
   
   names(smipsR) <- 'smips'
   
   outFilePath <- paste0(apiDevRootDir, '/SFS/tmp/',  basename(tempfile()), '.tif')
   sfsMap <- suppressWarnings( interpolate(smipsR, mMod, xyOnly = FALSE, index = 1,format="GTiff",overwrite=T))
+  #plot(sfsMap)
   wrMsk <- raster(paste0(apiDevRootDir, '/SFS/Masks/SFS.tif'))
   
   om <- mask(sfsMap,wrMsk, filename=outFilePath)
