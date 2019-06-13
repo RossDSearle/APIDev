@@ -5,29 +5,28 @@ source('C:/Users/sea084/Dropbox/RossRCode/Git/apiDev/SFS/SFSMethods.R')
 apiDevRootDir <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/apiDev'
 
 smipsPath <- 'C:/Projects/SMIPS/Rasters/CSIRO/Wetness-Index/Final'
-
-fls <- list.files(smipsPath, full.names = T, recursive = T, pattern = '.tif')
-
-
-stk <- stack(fls[1:5])
-
-sql <- 'Select * from Sites'
-sites <- doq(sql)
+smipsfls <- list.files(smipsPath, full.names = T, recursive = T, pattern = '.tif')
 
 
+covsPath <- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev/SFS/Covariates'
+fls <- list.files(covsPath, full.names = T, recursive = T, pattern = '.tif')
 
+
+stk <- stack(fls)
 
 outdf <- data.frame(longitude=numeric(), latitude=numeric(), ProbeVal=numeric(), SmipsVal=numeric())
 
-for (i in 1:length(fls)) {
+for (i in 1:length(smipsfls)) {
   
   print(i)
   
-  fpath <- fls[i]
+  fpath <- smipsfls[i]
   fname <- basename(fpath)
   dt <- str_remove( str_split(fname, '_')[[1]][3], '.tif')
   
   r <- raster(fpath)
+  stk <- addLayer(stk, r)
+  names(stk)
   
   #probeData <- getProbeDataForaDate(dt)
   
