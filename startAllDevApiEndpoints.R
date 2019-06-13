@@ -2,55 +2,26 @@ library(plumber)
 library(htmltidy)
 library(swagger)
 
-#setwd('C:/Users/sea084/Dropbox/RossRCode/Git/apiDev/AgX')
-#getwd()
-source('apiDev_Config.R')
+machineName <- as.character(Sys.info()['nodename'])
 
+if(machineName == 'FANCY-DP'){
+  deployRootDir <- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev'
+  server <- '0.0.0.0'
+}else{
+  deployRootDir <- '/srv/plumber/APIDev'
+  server <- 'http://esoil.io'
+}
 
+portNum <- 8029
 
-# cat("\n")
-# cat("\n")
-# cat("You are now running the AgX Web Services API\n")
-# cat("\n")
-# cat("API uri root is '/AgX'\n")
-# cat("\n")
-# cat("Currently supported API endpoints are \n")
-# cat("    - SoilMap\n")
-# cat("\n")
-# cat("Some usage examples...\n")
-# cat("-----------------------------\n")
-# cat(server, ":", portNum, "/AgX/SoilMap\n", sep = '')
-# 
-# cat("Running the swagger UI at http://",server,":", portNum, "/__swagger__/\n", sep = '')
-# cat("\n", sep = '')
+source(paste0(deployRootDir, '/apiDev_Config.R'))
 
-
-r <- plumb(paste0(apiDevRootDir, "/AllDevApiEndpoints.R")) 
+r <- plumb(paste0(deployRootDir, "/AllDevApiEndpoints.R")) 
 print(r)
 
  
- 
- # root <- plumber$new()
- # 
- # 
- # users <- plumber$new(paste0(apiDevRootDir, "/AgX/AgXApiEndpoints2.R"))
-#  r$mount("/users", users)
-  
-  options("plumber.host" = server)
-  options("plumber.apiHost" = server)
-  options("plumber.port" = portNum)
-  options("plumber.apiPort" = portNum)
-  
-  if(machineName == 'FANCY-DP'){
-    if("package:htmltidy" %in% search() ){
-      viewer <- getOption("viewer")
-      viewer(paste0('http://127.0.0.1:', portNum, '/__swagger__/'))
-    }
-  }
+  options("plumber.host" = "0.0.0.0")
+  options("plumber.apiHost" = "0.0.0.0")
   r$run(host=server, port=portNum, swagger=TRUE)
   
  
-
-
-
-

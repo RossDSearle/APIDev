@@ -7,12 +7,12 @@ library(tictoc)
 library(clhs)
 
 
-
-if(machineName == 'FANCY-DP'){
-  apiDevRootDir <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/apiDev'
-}else{
-  apiDevRootDir <<- '/srv/plumber/apiDev'
-}
+# 
+# if(machineName == 'FANCY-DP'){
+#   apiDevRootDir <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/apiDev'
+# }else{
+#   apiDevRootDir <<- '/srv/plumber/apiDev'
+# }
 
 AgXRootDir <- paste0(apiDevRootDir, '/AgX/Data')
 

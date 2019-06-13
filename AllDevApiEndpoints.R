@@ -1,10 +1,7 @@
 
 machineName <- as.character(Sys.info()['nodename'])
 
-
-
-
-#* @apiTitle ASIS API Development
+#* @apiTitle Ross' API Development Area
 #* @apiDescription Some web service endpoints to demonstrate some concepts
 
 
@@ -16,19 +13,21 @@ machineName <- as.character(Sys.info()['nodename'])
 #* @tag Regional Soil Moisture Maps
 #' @html
 #' @get /SoilMoisture/GetMap
+
 apiGetRegionalSoilMoistureMap <- function(res, Region='SFS', Date=NULL){
   
   
-  date <- '01012017'
+  #date <- '01012017'
   tryCatch({
     
-    res$setHeader("content-disposition", paste0("attachment; filename=SM_", region, "_", date, ".tif"));
+    res$setHeader("content-disposition", paste0("attachment; filename=SM_", Region, "_", Date, ".tif"));
     res$setHeader("Content-Type", "image/tiff")
     
     
     fPath <- getRegionalSMMap(Region, Date)
     print(fPath)
     bin <- readBin(paste0(fPath), "raw", n=file.info(paste0(fPath))$size)
+    unlink(fPath)
 
     return(bin)
    
