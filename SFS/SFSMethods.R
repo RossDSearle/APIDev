@@ -18,8 +18,11 @@ doq <- function(sql){
   return(res)
 }
 
-region <- 'SFS'
-dt <- '2016-10-01'
+# region <- 'SFS'
+# dt <- '2016-10-01'
+# r <-raster(smipsPath)
+# smR <- raster(outMapPath)
+# plot(smR)
 
 getRegionalSMMap <- function(region, dt){
   
@@ -47,6 +50,7 @@ drillProbeLocations <- function(probeData, smipsR){
   #print(smipsR)
   coordinates(probeData) <-  ~Longitude+Latitude
   crs(probeData) <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  probeData <- probeData[-zerodist(probeData)[,1],]
   #plot(probeData)
   pts <- extract(smipsR, probeData)
   smipsDrill <- data.frame(probeData@coords[,1], probeData@coords[,2], probeData@data$SM, pts)
@@ -58,21 +62,26 @@ drillProbeLocations <- function(probeData, smipsR){
 
 krigMap <- function(probePts, smipsR){
   
-  mod1 = lm(probePts$SM ~ probePts$smips, data = probePts)
-  summary(mod1)
+  #mod1 = lm(probePts$SM ~ probePts$smips, data = probePts)
+  #summary(mod1)
   
-  v <- suppressWarnings(automap::autofitVariogram(SM ~ smips,probePts))
+  #v <- suppressWarnings(automap::autofitVariogram(SM ~ smips,probePts))
+  v <- automap::autofitVariogram(SM ~ smips,probePts)
 
-  mMod <-  suppressWarnings(gstat(NULL, "moist", SM ~ smips, probePts , model = v$var_model))
+  #mMod <-  suppressWarnings(gstat(NULL, "moist", SM ~ smips, probePts , model = v$var_model))
+  mMod <-  gstat(NULL, "moist", SM ~ smips, probePts , model = v$var_model)
   
   names(smipsR) <- 'smips'
   
   outFilePath <- paste0(apiDevRootDir, '/SFS/tmp/',  basename(tempfile()), '.tif')
-  sfsMap <- suppressWarnings( interpolate(smipsR, mMod, xyOnly = FALSE, index = 1,format="GTiff",overwrite=T))
+  #sfsMap <- suppressWarnings( interpolate(smipsR, mMod, xyOnly = FALSE, index = 1,format="GTiff",overwrite=T))
+  sfsMap <- raster::interpolate(smipsR, mMod, xyOnly = FALSE, index = 1,format="GTiff",overwrite=T)
   #plot(sfsMap)
   wrMsk <- raster(paste0(apiDevRootDir, '/SFS/Masks/SFS.tif'))
   
-  om <- mask(sfsMap,wrMsk, filename=outFilePath)
+  om1 <- mask(sfsMap,wrMsk)
+  om2 <- clamp(om1, lower=0, upper=100)
+  writeRaster(om2, outFilePath)
   return(outFilePath)
 }
   

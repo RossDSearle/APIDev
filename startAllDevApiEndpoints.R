@@ -20,10 +20,11 @@ print(r)
 
  
    
-  # 
-  # options("plumber.host" = "0.0.0.0")
-  # options("plumber.apiHost" = "0.0.0.0")
-  server <<- '127.0.0.1'
+   
+   options("plumber.host" = "0.0.0.0")
+   options("plumber.apiHost" = "0.0.0.0")
+  #server <<- '127.0.0.1'
+ 
   r$run(host=server, port=portNum, swagger=TRUE)
   
  

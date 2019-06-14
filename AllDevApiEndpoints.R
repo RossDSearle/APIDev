@@ -25,8 +25,8 @@ machineName <- as.character(Sys.info()['nodename'])
 
 #* Returns a regional soil mositure map as GeoTiff
 
-#* @param Date
-#* @param Region
+#* @param Date Date for soil moisture map. (format = YYYY-MM-DD)
+#* @param Region Region to generate soil moisture map for. (SFS is only option currently)
 #* @tag Regional Soil Moisture Maps
 #' @html
 #' @get /SoilMoisture/GetMap
