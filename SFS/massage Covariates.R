@@ -54,4 +54,17 @@ for (i in 1:length(paths)) {
 smipsClipIn <- 'C:/Projects/SMIPS/SFS/regionalSM/data/SmipsClips'
 smipsClips <- list.files(smipsClipIn, full.names = T, recursive = T, pattern = '.tif')
 
+for(i in 1:length(smipsClips)){
+  
+  print(i)
+  stk <- stack(smipsClips[i:(i+5)])
+  fname <- smipsClips[i+2]
+  dt <-  dt <- str_remove( str_split(fname, '_')[[1]][3], '.tif')
+  outname <- paste0('C:/Projects/SMIPS/SFS/regionalSM/data/SmipsMovingAverage/', basename(fname))
+  
+  r <- mean(stk)
+ writeRaster(r, outname)
+  
+}
+
 

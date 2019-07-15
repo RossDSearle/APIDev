@@ -3,6 +3,10 @@ library(DBI)
 library(RSQLite)
 library(xts)
 library(gstat)
+library(RCurl)
+library(raster)
+
+
 
 regions <- read.csv(paste0(apiDevRootDir, '/SFS/SM_Regions.csv'), stringsAsFactors = F)
 
@@ -114,3 +118,36 @@ getProbeDataForaDate <- function(dt){
   df  <- doq(sql)
   return(df)
 }
+
+
+
+
+
+getSeason <- function(DATES) {
+  WS <- as.Date("2012-12-15", format = "%Y-%m-%d") # Winter Solstice
+  SE <- as.Date("2012-3-15",  format = "%Y-%m-%d") # Spring Equinox
+  SS <- as.Date("2012-6-15",  format = "%Y-%m-%d") # Summer Solstice
+  FE <- as.Date("2012-9-15",  format = "%Y-%m-%d") # Fall Equinox
+  
+  # Convert dates from any year to 2012 dates
+  d <- as.Date(strftime(DATES, format="2012-%m-%d"))
+  
+  ifelse (d >= WS | d < SE, "Summer",
+          ifelse (d >= SE & d < SS, "Fal",
+                  ifelse (d >= SS & d < FE, "Winter", "Springl")))
+}
+
+getSeasonAsNumeric <- function(DATES) {
+  WS <- as.Date("2012-12-15", format = "%Y-%m-%d") # Winter Solstice
+  SE <- as.Date("2012-3-15",  format = "%Y-%m-%d") # Spring Equinox
+  SS <- as.Date("2012-6-15",  format = "%Y-%m-%d") # Summer Solstice
+  FE <- as.Date("2012-9-15",  format = "%Y-%m-%d") # Fall Equinox
+  
+  # Convert dates from any year to 2012 dates
+  d <- as.Date(strftime(DATES, format="2012-%m-%d"))
+  
+  ifelse (d >= WS | d < SE, 4,
+          ifelse (d >= SE & d < SS, 1,
+                  ifelse (d >= SS & d < FE, 2, 3)))
+}
+
