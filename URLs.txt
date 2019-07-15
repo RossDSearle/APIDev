@@ -1,0 +1,3 @@
+
+
+http://esoil.io/APIDev/SoilMoisture/GetMap?Region=SFS&Date=2016-05-01
