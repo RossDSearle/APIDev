@@ -6,6 +6,8 @@ library(gstat)
 library(RCurl)
 library(raster)
 
+rasterOptions(datatype="FLT4S", timer=TRUE, format='GTiff',progress="text",chunksize=1e+08,maxmemory=1e+09, overwrite=TRUE) # maxmemory = max no of cells to read into memory
+
 
 
 regions <- read.csv(paste0(apiDevRootDir, '/SFS/SM_Regions.csv'), stringsAsFactors = F)
@@ -47,8 +49,6 @@ getRegionalSMMap <- function(region, dt){
 
 }
 
-
-
 drillProbeLocations <- function(probeData, smipsR){
   
   #print(smipsR)
@@ -62,7 +62,6 @@ drillProbeLocations <- function(probeData, smipsR){
   #print(head(probeData))
   return(probeData)
 }
-  
 
 krigMap <- function(probePts, smipsR){
   
@@ -89,7 +88,6 @@ krigMap <- function(probePts, smipsR){
   return(outFilePath)
 }
   
-
 getSmips <- function(reg, dt){
   
   yr<-str_sub(dt, 1,4)
@@ -105,10 +103,6 @@ getSmips <- function(reg, dt){
   return(outfile)
 }
 
-
-
-
-
 getProbeDataForaDate <- function(dt){
   
   sql <-  paste0('SELECT Sites.SiteID, Sensors.device, Sites.SiteName, Sites.Longitude, Sites.Latitude, DataStore.dt, Max(DataStore.value) AS SM 
@@ -118,10 +112,6 @@ getProbeDataForaDate <- function(dt){
   df  <- doq(sql)
   return(df)
 }
-
-
-
-
 
 getSeason <- function(DATES) {
   WS <- as.Date("2012-12-15", format = "%Y-%m-%d") # Winter Solstice
@@ -150,4 +140,133 @@ getSeasonAsNumeric <- function(DATES) {
           ifelse (d >= SE & d < SS, 1,
                   ifelse (d >= SS & d < FE, 2, 3)))
 }
+
+
+
+
+
+
+
+
+
+# region='SFS'
+# dt='2018-07-14'
+# theDepth=600
+##########################    ML  Approaches   ########################
+
+getRegionalSMMap2 <- function(region, dt, depth){
+  
+  reg <- regions[regions$Region==region,]
+  
+  smipsPath <- getSmips(reg, dt)
+  smipsR <- raster(smipsPath)
+  
+  #probeData <- getProbeDataForaDate2(dt, reg$Region)
+  #probePts <- drillProbeLocations(probeData, smipsR)
+  #outMapPath <- krigMap(probePts, smipsR)
+  
+  outMapPath <- MLMap(dt, depth)
+  unlink(smipsPath)
+  
+  return(outMapPath)
+  
+}
+
+MLMap <- function( dt, theDepth){
+  
+  Rmodel <- readRDS(paste0(apiDevRootDir, '/SFS/ML/RFmodel.rds'))
+  templateR <- raster(paste0(apiDevRootDir, '/SFS/Masks/SFS.tif'))
+  covsPath <- paste0(apiDevRootDir, '/SFS/CovariatesNoNa')
+  fls <- list.files(covsPath, full.names = T, recursive = T, pattern = '.tif')
+  
+  dt <- as.Date(dt)
+  doyVal <- yday(dt)
+  mthVal <- month(dt)
+  seasonVal <- getSeasonAsNumeric(dt)
+  
+  
+  fpath <- paste0(sfsDatRoot, '/CSIRO_Wetness-Index_', dt ,'.tif' )
+  smipsR <- raster(fpath)
+  smipsR[is.na(smipsR[])] <- 0
+  names(smipsR) <- 'SMIPSVal'
+
+  print(theDepth)
+  depth <- templateR
+  depth[] <- theDepth
+  names(depth) <- 'Depth'
+  doy <- templateR
+  doy[] <- doyVal
+  names(doy) <- 'doy'
+  mth <- templateR
+  mth[] <- mthVal
+  names(mth) <- 'mth'
+  season <- templateR
+  season[] <- seasonVal
+  names(season) <- 'season'
+ 
+  predStk <- stack(c(depth, smipsR, fls, doy, mth, season))
+  names(predStk)
+  Rmodel$forest$independent.variable.names
+  
+  map <- predict( Rmodel, as.data.frame(as.matrix(predStk)))
+ 
+  outR <- templateR
+  outR[] <- map$predictions
+  outName <- paste0(apiDevRootDir, '/SFS/tmp/',  basename(tempfile()), '.tif')
+  outRc <- mask(outR, templateR, filename = outName, overwrite=T)
+
+  
+  return(outName)
+  
+}
+
+
+getProbeDataForaDate2 <- function(dt, region, depth){
+  
+  aoi <- '-38.5;141;-37;144.5'
+  startDate <- '2018-07-14T00:00:00'
+  endDate <-  '2018-07-14T23:59:59'
+  dataType <- 'Soil-Moisture'
+  
+  
+  # make a map of all sensor locations
+  #url <- paste0(server,'/SensorAPI/getSensorLocations?usr=', sfUsr, '&pwd=', sfPwd)
+  url <- paste0(server,'/SensorAPI/getSensorLocations?usr=', sfUsr, '&pwd=', sfPwd, '&bbox=', aoi)
+  sensorsJson <- getURL(url)
+  sensDF <- fromJSON(sensorsJson)
+  sensDF <- sensDF[sensDF$SensorGroup == region,]
+  
+  outDF <- data.frame()
+  
+  for (i in 1:nrow(sensDF)) {
+    print(i)
+    
+    id <- sensDF$SiteID[i]
+    url <- paste0(server, '/SensorAPI/getSensorDataStreams?usr=', sfUsr, '&pwd=', sfPwd, '&siteid=', id,  '&sensortype=', dataType, '&startdate=', startDate, '&enddate=', endDate)
+    DSJson <- getURL(url)
+    sensDS <- fromJSON(DSJson)
+    
+    if(is.null(sensDS$error)){
+      sdf <- data.frame() 
+      
+      
+      
+      for (j in 1:nrow(sensDS)) {
+        rec <- sensDS[j,]
+        rdf <- data.frame(SiteID=id, Longitude=rec$Longitude, Latitude=rec$Latitude, Depth=rec$UpperDepthCm, dt=rec$DataStream[[1]]$t, val=rec$DataStream[[1]]$v )
+        sdf <- rbind(sdf, rdf)
+        Sys.sleep(1)
+        
+      }
+      
+      write.csv(sdf, paste0(rootDir, '/ProbeDumps/SM_', id, '.csv'))
+      outDF <- rbind(outDF, sdf)
+    }else{
+      print(paste0('ERROR : ', id))
+    }
+    
+  }
+  
+}
+
 

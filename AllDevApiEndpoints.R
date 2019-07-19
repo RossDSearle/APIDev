@@ -7,9 +7,11 @@ print(machineName)
 if(machineName == 'FANCY-DP'){
   apiDevRootDir <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev'
   conPath <<- 'C:/Projects/SMIPS/SFS/sfs.db'
+  sfsDatRoot <<- 'C:/Projects/SMIPS/SFS/regionalSM/data/SmipsMovingAverage'
 }else{
   apiDevRootDir <<- '/srv/plumber/APIDev'
   conPath <<- '/mnt/data/RegionalSoilMoisture/sfs.db'
+  sfsDatRoot <<- '/mnt/data/SFS/SmipsMovingAverage'
 }
 
 
@@ -27,21 +29,20 @@ machineName <- as.character(Sys.info()['nodename'])
 
 #* @param Date Date for soil moisture map. (format = YYYY-MM-DD)
 #* @param Region Region to generate soil moisture map for. (SFS is only option currently)
+#* @param Depth Depth to generate soil moisture map for. 
 #* @tag Regional Soil Moisture Maps
 #' @html
 #' @get /SoilMoisture/GetMap
 
-apiGetRegionalSoilMoistureMap <- function(res, Region='SFS', Date=NULL){
+apiGetRegionalSoilMoistureMap <- function(res, Region='SFS', Date=NULL, Depth=NULL){
   
   
-  #date <- '01012017'
   tryCatch({
     
-    res$setHeader("content-disposition", paste0("attachment; filename=SM_", Region, "_", Date, ".tif"));
+    res$setHeader("content-disposition", paste0("attachment; filename=SM_", Region, "_", Date, "_", Depth, ".tif"));
     res$setHeader("Content-Type", "image/tiff")
-    
-    
-    fPath <- getRegionalSMMap(Region, Date)
+
+    fPath <- getRegionalSMMap2(Region, Date, as.numeric(Depth))
     print(fPath)
     bin <- readBin(paste0(fPath), "raw", n=file.info(paste0(fPath))$size)
     unlink(fPath)
@@ -57,9 +58,32 @@ apiGetRegionalSoilMoistureMap <- function(res, Region='SFS', Date=NULL){
   
 }
 
+#* Returns Am image of all the soil moisture map
 
+#* @param Date Date for soil moisture map. (format = YYYY-MM-DD)
+#* @param Region Region to generate soil moisture map for. (SFS is only option currently)
+#* @param Depth Depth to generate soil moisture map for. 
+#* @tag Regional Soil Moisture Maps
 
-
+#* @png (width = 500, height = 500)
+#* @get /SoilMoisture/GetMapAsImage
+apiGetRegionalSoilMoistureMapAsImage <- function(res, Region='SFS', Date=NULL, Depth=NULL){
+  
+  tryCatch({
+    
+    fPath <- getRegionalSMMap2(Region, Date, as.numeric(Depth))
+    r <- raster(fPath)
+    spp <- plot(r)
+    
+    unlink(fPath)
+    print(fPath)
+    return(spp)
+  }, error = function(res)
+  {
+    res$status <- 400 # Bad request
+    list(error=jsonlite::unbox(geterrmessage()))
+  })
+}
 
 
 
