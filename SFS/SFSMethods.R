@@ -157,7 +157,7 @@ getSMIPSrasterCSIRO_OpenDAP <- function(reg, product, dt){
   miny =  reg$miny
   maxx =  reg$maxx
   maxy =  reg$maxy
-  print("HHHHHHHHHHH")
+
   
   xext = maxx - minx
   yext = maxy - miny
@@ -260,7 +260,7 @@ getRegionalSMMap2 <- function(region, dt, depth){
   #probePts <- drillProbeLocations(probeData, smipsR)
   #outMapPath <- krigMap(probePts, smipsR)
   
-  outMapPath <- MLMap(dt, depthVal, smipsR)
+  outMapPath <- MLMap(dt, depth, smipsR)
   #unlink(smipsPath)
   
   return(outMapPath)
