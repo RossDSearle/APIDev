@@ -9,6 +9,3 @@ library(raster)
 
 source(paste0(apiDevRootDir, '/AgX/AgXMethods.R'))
 source(paste0(apiDevRootDir, '/SFS/SFSMethods.R'))
-
-
-cat(server)
