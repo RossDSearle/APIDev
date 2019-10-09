@@ -58,7 +58,7 @@ apiGetRegionalSoilMoistureMap <- function(res, Region='SFS', Date=NULL, Depth=NU
   
 }
 
-#* Returns Am image of all the soil moisture map
+#* Returns an image of all the soil moisture map
 
 #* @param Date Date for soil moisture map. (format = YYYY-MM-DD)
 #* @param Region Region to generate soil moisture map for. (SFS is only option currently)
@@ -73,7 +73,7 @@ apiGetRegionalSoilMoistureMapAsImage <- function(res, Region='SFS', Date=NULL, D
     
     fPath <- getRegionalSMMap2(Region, Date, as.numeric(Depth))
     r <- raster(fPath)
-    spp <- plot(r)
+    spp <- plot(r, main=paste0('Soil Moisture at ', Depth, 'mm on ',Date))
     
     unlink(fPath)
     print(fPath)

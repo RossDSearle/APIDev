@@ -35,20 +35,20 @@ doq <- function(sql){
 getRegionalSMMap <- function(region, dt){
   
   reg <- regions[regions$Region==region,]
-
+  
   smipsPath <- getSmips(reg, dt)
   smipsR <- raster(smipsPath)
   
-   probeData <- getProbeDataForaDate(dt)
-   
-   probePts <- drillProbeLocations(probeData, smipsR)
-
+  probeData <- getProbeDataForaDate(dt)
+  
+  probePts <- drillProbeLocations(probeData, smipsR)
+  
   outMapPath <- krigMap(probePts, smipsR)
-
+  
   unlink(smipsPath)
-
+  
   return(outMapPath)
-
+  
 }
 
 drillProbeLocations <- function(probeData, smipsR){
@@ -72,7 +72,7 @@ krigMap <- function(probePts, smipsR){
   
   #v <- suppressWarnings(automap::autofitVariogram(SM ~ smips,probePts))
   v <- automap::autofitVariogram(SM ~ smips,probePts)
-
+  
   #mMod <-  suppressWarnings(gstat(NULL, "moist", SM ~ smips, probePts , model = v$var_model))
   mMod <-  gstat(NULL, "moist", SM ~ smips, probePts , model = v$var_model)
   
@@ -89,7 +89,7 @@ krigMap <- function(probePts, smipsR){
   writeRaster(om2, outFilePath)
   return(outFilePath)
 }
-  
+
 getSmips <- function(reg, dt){
   
   yr<-str_sub(dt, 1,4)
@@ -153,17 +153,17 @@ getcellsForALatLon <- function(lon, lat){
 
 getSMIPSrasterCSIRO_OpenDAP <- function(reg, product, dt){
   
- minx =  reg$minx
- miny =  reg$miny
- maxx =  reg$maxx
- maxy =  reg$maxy
- print("HHHHHHHHHHH")
+  minx =  reg$minx
+  miny =  reg$miny
+  maxx =  reg$maxx
+  maxy =  reg$maxy
+
   
   xext = maxx - minx
   yext = maxy - miny
   
   #stridex <- ceiling(xext / ( AusRes * wmsnumcols))
- # stridey <- ceiling(yext / ( AusRes * wmsnumrows))
+  # stridey <- ceiling(yext / ( AusRes * wmsnumrows))
   
   stridey = 1
   
@@ -189,18 +189,18 @@ getSMIPSrasterCSIRO_OpenDAP <- function(reg, product, dt){
   m1 <- as.matrix(odData2)
   
   r <- raster(nrows=nrow(odData2), ncols=ncol(odData2), xmn=minx, xmx=maxx, ymn=miny, ymx=maxy, crs=sp::CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"),  vals=m1)
- 
+  
   #outfile = paste0(apiDevRootDir, '/SFS/tmp/',  basename(tempfile()), '.tif')
- 
+  
   return(r)
 }
 
 getProbeDataForaDate <- function(dt){
   
   sql <-  paste0('SELECT Sites.SiteID, Sensors.device, Sites.SiteName, Sites.Longitude, Sites.Latitude, DataStore.dt, Max(DataStore.value) AS SM 
-                  FROM (Sites INNER JOIN Sensors ON Sites.ID = Sensors.device) INNER JOIN DataStore ON (Sensors.id = DataStore.id) AND (Sensors.device = DataStore.device)
-                  WHERE  Sensors.Depth=100 and dt Between "', dt, '" And "', as.Date(dt) + 1 ,'"
-                  GROUP BY Sites.SiteID, Sensors.device, Sites.SiteName, Sites.Longitude, Sites.Latitude;')
+                 FROM (Sites INNER JOIN Sensors ON Sites.ID = Sensors.device) INNER JOIN DataStore ON (Sensors.id = DataStore.id) AND (Sensors.device = DataStore.device)
+                 WHERE  Sensors.Depth=100 and dt Between "', dt, '" And "', as.Date(dt) + 1 ,'"
+                 GROUP BY Sites.SiteID, Sensors.device, Sites.SiteName, Sites.Longitude, Sites.Latitude;')
   df  <- doq(sql)
   return(df)
 }
@@ -241,9 +241,9 @@ getSeasonAsNumeric <- function(DATES) {
 
 
 
- # region='SFS'
- # dt='2019-07-14'
- # theDepth=600
+# region='SFS'
+# dt='2019-07-14'
+# theDepth=600
 ##########################    ML  Approaches   ########################
 
 getRegionalSMMap2 <- function(region, dt, depth){
@@ -252,15 +252,15 @@ getRegionalSMMap2 <- function(region, dt, depth){
   product='Openloop_Wetness_Index'
   
   smipsR <- getSMIPSrasterCSIRO_OpenDAP(reg, product, dt)
- 
- # smipsPath <- getSmips(reg, dt)
-#  smipsR <- raster(smipsPath)
+  
+  # smipsPath <- getSmips(reg, dt)
+  #  smipsR <- raster(smipsPath)
   
   #probeData <- getProbeDataForaDate2(dt, reg$Region)
   #probePts <- drillProbeLocations(probeData, smipsR)
   #outMapPath <- krigMap(probePts, smipsR)
   
-  outMapPath <- MLMap(dt, depthVal, smipsR)
+  outMapPath <- MLMap(dt, depth, smipsR)
   #unlink(smipsPath)
   
   return(outMapPath)
@@ -273,11 +273,11 @@ MLMap <- function( dt, theDepthVal, smipsR){
   doyVal <- yday(dt)
   mthVal <- month(dt)
   seasonVal <- getSeasonAsNumeric(dt)
-
+  
   smipsR[is.na(smipsR[])] <- 0
   names(smipsR) <- 'SMIPSVal'
   smipsR <- resample(smipsR, templateRSMIPS)
-
+  
   depthR <- templateRSMIPS
   depthR[] <- theDepthVal
   names(depthR) <- 'Depth'
@@ -290,19 +290,17 @@ MLMap <- function( dt, theDepthVal, smipsR){
   season <- templateRSMIPS
   season[] <- seasonVal
   names(season) <- 'season'
- 
+  
   predStk2 <- stack(c(smipsR, doy, mth, season, depthR))
   pdf2 <- as.data.frame(as.matrix(predStk2))
   pdf <- cbind(pdf1,pdf2)
   
   map <- predict( Rmodel, pdf)
- 
+  
   outR <- templateRSMIPS
   outR[] <- map$predictions
   outName <- paste0(apiDevRootDir, '/SFS/tmp/',  basename(tempfile()), '.tif')
   outRc <- mask(outR, templateRSMIPS, filename = outName, overwrite=T)
-
-  plot(outRc)
   
   return(outName)
   
