@@ -8,7 +8,7 @@ library(raster)
 library(lubridate)
 library(ranger)
 
-rasterOptions(datatype="FLT4S", timer=TRUE, format='GTiff',progress="text",chunksize=1e+08,maxmemory=1e+09, overwrite=TRUE, tmpdir = paste0(apiDevRootDir, '/SFS/tmp')) # maxmemory = max no of cells to read into memory
+rasterOptions(datatype="FLT4S", timer=TRUE, format='GTiff',progress="text",chunksize=1e+08,maxmemory=1e+09, overwrite=TRUE) # maxmemory = max no of cells to read into memory
 
 
 
@@ -35,20 +35,20 @@ doq <- function(sql){
 getRegionalSMMap <- function(region, dt){
   
   reg <- regions[regions$Region==region,]
-
+  
   smipsPath <- getSmips(reg, dt)
   smipsR <- raster(smipsPath)
   
-   probeData <- getProbeDataForaDate(dt)
-   
-   probePts <- drillProbeLocations(probeData, smipsR)
-
+  probeData <- getProbeDataForaDate(dt)
+  
+  probePts <- drillProbeLocations(probeData, smipsR)
+  
   outMapPath <- krigMap(probePts, smipsR)
-
+  
   unlink(smipsPath)
-
+  
   return(outMapPath)
-
+  
 }
 
 drillProbeLocations <- function(probeData, smipsR){
@@ -72,7 +72,7 @@ krigMap <- function(probePts, smipsR){
   
   #v <- suppressWarnings(automap::autofitVariogram(SM ~ smips,probePts))
   v <- automap::autofitVariogram(SM ~ smips,probePts)
-
+  
   #mMod <-  suppressWarnings(gstat(NULL, "moist", SM ~ smips, probePts , model = v$var_model))
   mMod <-  gstat(NULL, "moist", SM ~ smips, probePts , model = v$var_model)
   
@@ -89,14 +89,13 @@ krigMap <- function(probePts, smipsR){
   writeRaster(om2, outFilePath)
   return(outFilePath)
 }
-  
+
 getSmips <- function(reg, dt){
   
   yr<-str_sub(dt, 1,4)
   xsub <- paste0('&SUBSET=x(', reg$minx, ',', reg$maxx, ')')
   ysub <- paste0('&SUBSET=y(', reg$miny, ',', reg$maxy, ')')
   outfile = paste0(apiDevRootDir, '/SFS/tmp/',  basename(tempfile()), '.tif')
-
   wcsUrl <- paste0('http://ternsoils.nexus.csiro.au/cgi-bin/mapserv.exe?map=e:/MapServer/SMIPS/moisture.map&SERVICE=WCS&VERSION=2.0.0&REQUEST=GetCoverage&COVERAGEID=CSIRO_Wetness-Index&FORMAT=image/tiff&mYear=', yr, '&mDate=', dt, '&mFName=CSIRO_Wetness-Index', xsub, ysub, '&FORMAT=image/tiff')
   download.file(wcsUrl, destfile = outfile, quiet = T, mode = 'wb')
   
@@ -106,12 +105,102 @@ getSmips <- function(reg, dt){
   return(outfile)
 }
 
+
+
+
+
+
+
+
+
+######  CSIRO Thredds serve info  ########################
+CSIRO_OpenDAP_Server <- 'http://esoil.io/thredds/dodsC/SMIPS/SMIPSv0.5.nc'
+originDay = 42326
+originDate <- '2015-11-20'
+Ausminx <- 112.905
+Ausminy <-  -43.735
+Ausmaxx <- 154.005
+Ausmaxy <- -9.005
+AusRes <- 0.01
+Ausnumrows <- 3474
+Ausnumcols <- 4110
+
+
+###### constants for model evaluation data
+covsPath <-  paste0(sfsDatRoot, '/SFS/CovariatesNoNa')
+covfls <- list.files(covsPath, full.names = T, recursive = T, pattern = '.tif')
+predStk <- stack(c(covfls))
+pdf1 <- as.data.frame(as.matrix(predStk))
+Rmodel <- readRDS(paste0(sfsDatRoot, '/SFS/ML/RFmodel.rds'))
+templateRSMIPS <- raster(paste0(sfsDatRoot, '/SFS/Masks/SFS.tif'))
+
+templateR <- raster(nrows=Ausnumrows, ncols=Ausnumcols, xmn=Ausminx, xmx=Ausmaxx, ymn=Ausminy, ymx=Ausmaxy, crs=CRS('+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0'))
+
+#dt <- '2018-09-25'
+
+
+getcellsForALatLon <- function(lon, lat){
+  cell <- cellFromXY(templateR, cbind(c(lon), c(lat)))
+  colNum <- colFromCell(templateR, cell)
+  rowNum <- rowFromCell(templateR, cell)
+  return(data.frame(colNum=colNum, rowNum=rowNum))
+}
+
+
+
+
+
+
+getSMIPSrasterCSIRO_OpenDAP <- function(reg, product, dt){
+  
+  minx =  reg$minx
+  miny =  reg$miny
+  maxx =  reg$maxx
+  maxy =  reg$maxy
+  print("HHHHHHHHHHH")
+  
+  xext = maxx - minx
+  yext = maxy - miny
+  
+  #stridex <- ceiling(xext / ( AusRes * wmsnumcols))
+  # stridey <- ceiling(yext / ( AusRes * wmsnumrows))
+  
+  stridey = 1
+  
+  ll <- getcellsForALatLon(minx, miny)
+  ur <- getcellsForALatLon(maxx, maxy)
+  
+  subcols <- ceiling( c((ur$colNum-1) - ll$colNum) / stridey )
+  subrows <- ceiling( c((ll$rowNum-1) - ur$rowNum) / stridey )
+  
+  dayNum = as.numeric(as.Date(paste(dt), "%Y-%m-%d") - as.Date(paste(originDate), "%Y-%m-%d"))
+  
+  url <- paste0('http://esoil.io/thredds/dodsC/SMIPSall/SMIPSv0.5.nc.ascii?',product, '%5B',dayNum ,'%5D%5B', ur$rowNum-1, ':', stridey, ':', ll$rowNum-1, '%5D%5B', ll$colNum-1, ':', stridey, ':', ur$colNum-1, '%5D')
+  
+  #url <- paste0('http://esoil.io/thredds/dodsC/SMIPSall/SMIPSv0.5.nc.ascii?',product,%5B1%5D%5B0:1:10%5D%5B0:1:10%5D
+  #  url <-  "http://esoil.io/thredds/dodsC/SMIPSall/SMIPSv0.5.nc.ascii?Openloop_Wetness_Index%5B0:1:0%5D%5B0:1:0%5D%5B0:1:0%5D" 
+  #  http://esoil.io/thredds/dodsC/SMIPSall/SMIPSv0.5.nc
+  print(url)
+  
+  d1 <- getURI(url)
+  
+  odData1 <- read.table(text=d1, skip=12, nrows = subrows , sep = ',')
+  odData2 <- odData1[,-1]
+  m1 <- as.matrix(odData2)
+  
+  r <- raster(nrows=nrow(odData2), ncols=ncol(odData2), xmn=minx, xmx=maxx, ymn=miny, ymx=maxy, crs=sp::CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"),  vals=m1)
+  
+  #outfile = paste0(apiDevRootDir, '/SFS/tmp/',  basename(tempfile()), '.tif')
+  
+  return(r)
+}
+
 getProbeDataForaDate <- function(dt){
   
   sql <-  paste0('SELECT Sites.SiteID, Sensors.device, Sites.SiteName, Sites.Longitude, Sites.Latitude, DataStore.dt, Max(DataStore.value) AS SM 
-                  FROM (Sites INNER JOIN Sensors ON Sites.ID = Sensors.device) INNER JOIN DataStore ON (Sensors.id = DataStore.id) AND (Sensors.device = DataStore.device)
-                  WHERE  Sensors.Depth=100 and dt Between "', dt, '" And "', as.Date(dt) + 1 ,'"
-                  GROUP BY Sites.SiteID, Sensors.device, Sites.SiteName, Sites.Longitude, Sites.Latitude;')
+                 FROM (Sites INNER JOIN Sensors ON Sites.ID = Sensors.device) INNER JOIN DataStore ON (Sensors.id = DataStore.id) AND (Sensors.device = DataStore.device)
+                 WHERE  Sensors.Depth=100 and dt Between "', dt, '" And "', as.Date(dt) + 1 ,'"
+                 GROUP BY Sites.SiteID, Sensors.device, Sites.SiteName, Sites.Longitude, Sites.Latitude;')
   df  <- doq(sql)
   return(df)
 }
@@ -153,81 +242,67 @@ getSeasonAsNumeric <- function(DATES) {
 
 
 # region='SFS'
-# dt='2018-07-14'
+# dt='2019-07-14'
 # theDepth=600
 ##########################    ML  Approaches   ########################
 
 getRegionalSMMap2 <- function(region, dt, depth){
- 
   
   reg <- regions[regions$Region==region,]
+  product='Openloop_Wetness_Index'
   
-  smipsPath <- getSmips(reg, dt)
-  smipsR <- raster(smipsPath)
+  smipsR <- getSMIPSrasterCSIRO_OpenDAP(reg, product, dt)
+  
+  # smipsPath <- getSmips(reg, dt)
+  #  smipsR <- raster(smipsPath)
   
   #probeData <- getProbeDataForaDate2(dt, reg$Region)
   #probePts <- drillProbeLocations(probeData, smipsR)
   #outMapPath <- krigMap(probePts, smipsR)
   
-  outMapPath <- MLMap(dt, depth)
-  unlink(smipsPath)
+  outMapPath <- MLMap(dt, depthVal, smipsR)
+  #unlink(smipsPath)
   
   return(outMapPath)
   
 }
 
-MLMap <- function( theDt, theDepth){
+MLMap <- function( dt, theDepthVal, smipsR){
   
-  Rmodel <- readRDS(paste0(apiDevRootDir, '/SFS/ML/RFmodel_V2.rds'))
-  print(2)
-  templateR <- raster(paste0(apiDevRootDir, '/SFS/Masks/SFS.tif'))
-  covsPath <- paste0(apiDevRootDir, '/SFS/CovariatesNoNa')
-  fls <- list.files(covsPath, full.names = T, recursive = T, pattern = '.tif')
- 
-  dt <- as.Date(theDt)
-  
+  dt <- as.Date(dt)
   doyVal <- yday(dt)
   mthVal <- month(dt)
-  print('3')
   seasonVal <- getSeasonAsNumeric(dt)
   
- 
-  fpath <- paste0(sfsDatRoot, '/CSIRO_Wetness-Index_', dt ,'.tif' )
- 
-  smipsR <- raster(fpath)
   smipsR[is.na(smipsR[])] <- 0
   names(smipsR) <- 'SMIPSVal'
+  smipsR <- resample(smipsR, templateRSMIPS)
   
- 
-  
-  print(theDepth)
-  depth <- templateR
-  depth[] <- theDepth
-  names(depth) <- 'Depth'
-  doy <- templateR
+  depthR <- templateRSMIPS
+  depthR[] <- theDepthVal
+  names(depthR) <- 'Depth'
+  doy <- templateRSMIPS
   doy[] <- doyVal
   names(doy) <- 'doy'
-  mth <- templateR
+  mth <- templateRSMIPS
   mth[] <- mthVal
   names(mth) <- 'mth'
-  season <- templateR
+  season <- templateRSMIPS
   season[] <- seasonVal
   names(season) <- 'season'
- 
-  predStk <- stack(c(depth, smipsR, fls, doy, mth, season))
-  names(predStk)
-  Rmodel$forest$independent.variable.names
   
- 
+  predStk2 <- stack(c(smipsR, doy, mth, season, depthR))
+  pdf2 <- as.data.frame(as.matrix(predStk2))
+  pdf <- cbind(pdf1,pdf2)
   
-  map <- predict( Rmodel, as.data.frame(as.matrix(predStk)))
- 
-  outR <- templateR
+  map <- predict( Rmodel, pdf)
+  
+  outR <- templateRSMIPS
   outR[] <- map$predictions
   outName <- paste0(apiDevRootDir, '/SFS/tmp/',  basename(tempfile()), '.tif')
-  outRc <- mask(outR, templateR, filename = outName, overwrite=T)
-
-  print('4')
+  outRc <- mask(outR, templateRSMIPS, filename = outName, overwrite=T)
+  
+  plot(outRc)
   
   return(outName)
   
