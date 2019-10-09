@@ -5,8 +5,10 @@ library(xts)
 library(gstat)
 library(RCurl)
 library(raster)
+library(lubridate)
+library(ranger)
 
-rasterOptions(datatype="FLT4S", timer=TRUE, format='GTiff',progress="text",chunksize=1e+08,maxmemory=1e+09, overwrite=TRUE) # maxmemory = max no of cells to read into memory
+rasterOptions(datatype="FLT4S", timer=TRUE, format='GTiff',progress="text",chunksize=1e+08,maxmemory=1e+09, overwrite=TRUE, tmpdir = paste0(apiDevRootDir, '/SFS/tmp')) # maxmemory = max no of cells to read into memory
 
 
 
@@ -94,6 +96,7 @@ getSmips <- function(reg, dt){
   xsub <- paste0('&SUBSET=x(', reg$minx, ',', reg$maxx, ')')
   ysub <- paste0('&SUBSET=y(', reg$miny, ',', reg$maxy, ')')
   outfile = paste0(apiDevRootDir, '/SFS/tmp/',  basename(tempfile()), '.tif')
+
   wcsUrl <- paste0('http://ternsoils.nexus.csiro.au/cgi-bin/mapserv.exe?map=e:/MapServer/SMIPS/moisture.map&SERVICE=WCS&VERSION=2.0.0&REQUEST=GetCoverage&COVERAGEID=CSIRO_Wetness-Index&FORMAT=image/tiff&mYear=', yr, '&mDate=', dt, '&mFName=CSIRO_Wetness-Index', xsub, ysub, '&FORMAT=image/tiff')
   download.file(wcsUrl, destfile = outfile, quiet = T, mode = 'wb')
   
@@ -155,6 +158,7 @@ getSeasonAsNumeric <- function(DATES) {
 ##########################    ML  Approaches   ########################
 
 getRegionalSMMap2 <- function(region, dt, depth){
+ 
   
   reg <- regions[regions$Region==region,]
   
@@ -172,24 +176,30 @@ getRegionalSMMap2 <- function(region, dt, depth){
   
 }
 
-MLMap <- function( dt, theDepth){
+MLMap <- function( theDt, theDepth){
   
-  Rmodel <- readRDS(paste0(apiDevRootDir, '/SFS/ML/RFmodel.rds'))
+  Rmodel <- readRDS(paste0(apiDevRootDir, '/SFS/ML/RFmodel_V2.rds'))
+  print(2)
   templateR <- raster(paste0(apiDevRootDir, '/SFS/Masks/SFS.tif'))
   covsPath <- paste0(apiDevRootDir, '/SFS/CovariatesNoNa')
   fls <- list.files(covsPath, full.names = T, recursive = T, pattern = '.tif')
+ 
+  dt <- as.Date(theDt)
   
-  dt <- as.Date(dt)
   doyVal <- yday(dt)
   mthVal <- month(dt)
+  print('3')
   seasonVal <- getSeasonAsNumeric(dt)
   
-  
+ 
   fpath <- paste0(sfsDatRoot, '/CSIRO_Wetness-Index_', dt ,'.tif' )
+ 
   smipsR <- raster(fpath)
   smipsR[is.na(smipsR[])] <- 0
   names(smipsR) <- 'SMIPSVal'
-
+  
+ 
+  
   print(theDepth)
   depth <- templateR
   depth[] <- theDepth
@@ -208,6 +218,8 @@ MLMap <- function( dt, theDepth){
   names(predStk)
   Rmodel$forest$independent.variable.names
   
+ 
+  
   map <- predict( Rmodel, as.data.frame(as.matrix(predStk)))
  
   outR <- templateR
@@ -215,6 +227,7 @@ MLMap <- function( dt, theDepth){
   outName <- paste0(apiDevRootDir, '/SFS/tmp/',  basename(tempfile()), '.tif')
   outRc <- mask(outR, templateR, filename = outName, overwrite=T)
 
+  print('4')
   
   return(outName)
   

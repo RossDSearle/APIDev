@@ -12,7 +12,8 @@ if(machineName == 'FANCY-DP'){
   server <- 'http://esoil.io'
 }
 
-portNum <- 8029
+#portNum <- 8029
+portNum <- 8028
 
 
 r <- plumb(paste0(deployRootDir, "/AllDevApiEndpoints.R")) 
@@ -27,4 +28,5 @@ print(r)
  
   r$run(host=server, port=portNum, swagger=TRUE)
   
+ r
  
