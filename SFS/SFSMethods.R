@@ -302,8 +302,6 @@ MLMap <- function( dt, theDepthVal, smipsR){
   outName <- paste0(apiDevRootDir, '/SFS/tmp/',  basename(tempfile()), '.tif')
   outRc <- mask(outR, templateRSMIPS, filename = outName, overwrite=T)
   
-  plot(outRc)
-  
   return(outName)
   
 }
