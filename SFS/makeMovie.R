@@ -4,13 +4,15 @@ library(png)
 library(stringr)
 library(rasterVis)
 
+version = '3'
+
 dataRoot <- 'C:/Projects/SMIPS/SFS/regionalSM/data'
-SMIn <- paste0(dataRoot, '/Rasters/300')
-#fls <- list.files(SMIn, full.names = T, recursive = T, pattern = '.tif')
-theStack <- stack(SMinPaths)
+SMIn <- paste0(dataRoot, version, '/Rasters/300')
+fls <- list.files(SMIn, full.names = T, recursive = T, pattern = '.tif')
+#theStack <- stack(SMinPaths)
 
 sdate <- as.Date('2016-01-01')
-edate <- as.Date('2016-12-31')
+edate <- as.Date('2019-10-01')
 depth <- 300
 
 dts <- seq.Date(sdate, edate,1)
@@ -30,7 +32,7 @@ if(!dir.exists(tmpDir)){dir.create(tmpDir)}
 invisible(file.remove(list.files(tmpDir, full.names=TRUE)))
 
 
-bR <- readRDS(paste0(dataRoot, '/Validation/bolacRain.rds'))
+bR <- readRDS(paste0(dataRoot, version, '/Validation/bolacRain.rds'))
 
 print('Generating images from rasters')
 pb <- txtProgressBar(min = 0, max = nlayers(theStack), style = 3)
