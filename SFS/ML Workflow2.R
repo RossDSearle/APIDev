@@ -431,13 +431,14 @@ if(!dir.exists( rasterOut)) {dir.create(rasterOut, recursive = T)}
 
 covsPath <-  paste0(dataRoot, '/CovariatesNoNa')
 covfls <- list.files(covsPath, full.names = T, recursive = T, pattern = '.tif')
+predStk <- stack(c(covfls))
+pdf1 <- as.data.frame(as.matrix(predStk))
 
 startDate <- sDate + 2
 endDate <- eDate - 2
 dts <- seq.Date(startDate, endDate, 1)
 
-predStk <- stack(c(covfls))
-pdf1 <- as.data.frame(as.matrix(predStk))
+
 
 for (i in 1:length(dts)) {
   

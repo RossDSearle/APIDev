@@ -23,7 +23,7 @@ upperBound <- max(maxValue(theStack))
 lowerBound <- min(minValue(theStack))
 
 
-probVals <- read.csv(paste0(dataRoot, '/ML/SmipsSmoothDrill.csv'), stringsAsFactors = F)
+probVals <- read.csv(paste0(dataRoot, version, '/ML/SmipsSmoothDrill.csv'), stringsAsFactors = F)
 
 colfunc <- colorRampPalette(c("brown", 'lightyellow', "darkblue"))
 
