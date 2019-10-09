@@ -7,11 +7,11 @@ print(machineName)
 if(machineName == 'FANCY-DP'){
   apiDevRootDir <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev'
   conPath <<- 'C:/Projects/SMIPS/SFS/sfs.db'
-  sfsDatRoot <<- 'C:/Projects/SMIPS/SFS/regionalSM/data/SmipsMovingAverage'
+  sfsDatRoot <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev'
 }else{
   apiDevRootDir <<- '/srv/plumber/APIDev'
   conPath <<- '/mnt/data/RegionalSoilMoisture/sfs.db'
-  sfsDatRoot <<- '/mnt/data/SFS/SmipsMovingAverage'
+  sfsDatRoot <<- '/mnt/data'
 }
 
 
