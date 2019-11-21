@@ -3,6 +3,7 @@ library(imager)
 library(png)
 library(stringr)
 library(rasterVis)
+library(xts)
 
 version = '3'
 
@@ -23,7 +24,7 @@ upperBound <- max(maxValue(theStack))
 lowerBound <- min(minValue(theStack))
 
 
-probVals <- read.csv(paste0(dataRoot, version, '/ML/SmipsSmoothDrill.csv'), stringsAsFactors = F)
+probVals <- read.csv(paste0(dataRoot, version, '/ProbeDumps/SM_All.csv'), stringsAsFactors = F)
 
 colfunc <- colorRampPalette(c("brown", 'lightyellow', "darkblue"))
 
@@ -81,11 +82,11 @@ for(i in 1:nlayers(theStack)){
   #plot(theStack[[i]], col=colfunc(20),zlim=c(0,60), legend=FALSE, axes=FALSE, box=FALSE)
   image(theStack[[i]], col=colfunc(20),zlim=c(0,60), legend=FALSE, axes=FALSE, box=FALSE, xlab='', ylab='')
   
-  pVals <- probVals[probVals$Depth == depth & probVals$dt == dt, 3:5 ]
-   coordinates(pVals) <-  ~longitude+latitude
+  pVals <- probVals[probVals$Depth == depth & probVals$dt == dt, c(3,4,7) ]
+   coordinates(pVals) <-  ~Longitude+Latitude
   # wgs84 <- '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
   # crs(pVals) <- wgs84
-   pVals$Col <- colfunc(20)[as.numeric(cut(pVals$ProbeVal,breaks = 20))]
+   pVals$Col <- colfunc(20)[as.numeric(cut(pVals$val,breaks = 20))]
    points(pVals, pch=16, cex = 5, col='White')
    points(pVals, pch=16, cex = 3, lwd = 5, col=pVals$Col)
 
