@@ -7,7 +7,7 @@ library(XML)
 library(xml2)
 library(htmlTable)
 library(plyr);library(signal);library(pls);library(ithir);library(MASS)
-
+library(Rook)
 
 
 
@@ -31,7 +31,7 @@ if(machineName == 'FANCY-DP'){
 }
 
 
-#source(paste0(apiDevRootDir, '/apiDev_Config.R'))
+source(paste0(apiDevRootDir, '/apiDev_Config.R'))
 
 
 machineName <- as.character(Sys.info()['nodename'])
@@ -43,13 +43,14 @@ machineName <- as.character(Sys.info()['nodename'])
 
 
 
-msqlDriver   = "SQL Server"
+msqlDriver   = "ODBC Driver 17 for SQL Server"
 msqlServer   = "asris-sql-stage.it.csiro.au\\sql2017"
 msqlDatabase = "NatSoil_Ross"
-msqlUID      = 'NEXUS\\sea084'
-msqlPWD      = 'Joan4066'
+msqlUID      = 'rosssearle'
+msqlPWD      = 'Ads@2*&5cv'
 
-
+library(odbc)
+sort(unique(odbcListDrivers()[[1]]))
 
 #* Get a list of the Spectra Avaliable in Natsoil
 #* @param format (Optional) format of the response to return. Either json, csv, or xml. Default = json
@@ -70,9 +71,10 @@ function(req, res, verbose=T, format='json'){
                         Server   = msqlServer,
                         Database = msqlDatabase,
                         UID      = msqlUID,
-                        PWD      = msqlPWD,
-                        Trusted_Connection = "True"
-  )
+                        PWD      = msqlPWD
+                        
+                        )
+                        # ,  Trusted_Connection = "Yes")
   
   att <- "Organic carbon"
   
@@ -113,8 +115,8 @@ function(req, res, spectraID, attribute, format='json'){
                         Server   = msqlServer,
                         Database = msqlDatabase,
                         UID      = msqlUID,
-                        PWD      = msqlPWD,
-                        Trusted_Connection = "True"
+                        PWD      = msqlPWD
+                       
   )
   
   att <- "Organic carbon"
@@ -153,12 +155,14 @@ function(req, res, spectraID, attribute, format='json'){
 function(req, res, format='json'){
   # cat("---- New Upload request ----\n")
   
-  upload <- list(formContents = Rook::Multipart$parse(req))
+  upload <- list(formContents = Multipart$parse(req))
   
   fromF = upload$formContents$fileinfo$tempfile
   toF <- paste0(SpectraRootDir, '/Library/Uploads/',upload$formContents$fileinfo$filename)
   print(fromF)
   print(toF)
+  
+
   file.copy(fromF, toF , overwrite = T )
   
   spectra <- as.data.frame(get_spectra(paste0(SpectraRootDir, '/Library/Uploads/', upload$formContents$fileinfo$filename), type = "reflectance"))
@@ -450,7 +454,7 @@ trimSpec <- function(spectra, wavlimits) {
   colnames(trimmed_spectra) <- kept_names
   return(trimmed_spectra)}
 
-models <- c(SOC='SOC_Model.rds', BD='BD_Model.rds')
+models <- c(SOC='SOC_Model_V2.rds', BD='BD_Model_V2.rds')
 
 getAttributeValue <- function(att, spectra){
   

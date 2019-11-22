@@ -13,12 +13,6 @@ if(machineName == 'FANCY-DP'){
 }
 
 
-
-r <- plumb(paste0(deployRootDir, "/AllDevApiEndpoints.R")) 
-print(r)
-
-
-
 # deploy
 portNum <- 8029
 options("plumber.host" = "0.0.0.0")
@@ -26,8 +20,9 @@ options("plumber.apiHost" = "0.0.0.0")
 
 # debug
 # portNum <- 8028
-#server <<- '127.0.0.1'
+# server <<- '127.0.0.1'
 
-
+r <- plumb(paste0(deployRootDir, "/AllDevApiEndpoints.R")) 
+print(r)
 
 r$run(host=server, port=portNum, swagger=TRUE)
