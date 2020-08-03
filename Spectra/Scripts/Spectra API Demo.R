@@ -5,10 +5,18 @@ library(httr)
 library(RCurl)
 library(htmltidy)
 
-server <- 'http://esoil.io/APIDev/'
+server <- 'http://esoil.io/APIDev'
+server <- 'http://127.0.0.1:6026'
+#curl -X GET "http://127.0.0.1:6026/SoilSpectra/availableSpectra" -H  "accept: application/json"
 
+#  You can copy the urls below directly into your browser or run the R code below to see the results
 
+#  http://esoil.io/APIDev//SoilSpectra/availableSpectra?verbose=T
+#  http://esoil.io/APIDev//SoilSpectra/availableSpectra?verbose=T&format=csv
 
+#  http://esoil.io/APIDev//SoilSpectra/querySpectra?spectraID=21403&attribute=SOC
+
+  
 # Return a list of the available spectra IDs in the library. Just those that Brendan supplied and are in the NatSoil DB at this stage
 r <-  GET(paste0(server, '/SoilSpectra/availableSpectra?format=json&verbose=F'))
 js <- content(r, "text")
@@ -48,7 +56,7 @@ xml_view(js)
 
 
 # Upload a local spectra file (.asd) and run it through a model to estimate a value - this is a post request so a bit different to the above
-result <-  POST(paste0(server, '/SoilSpectra/Upload'), body = list(fileinfo = upload_file("C:/Temp/scans/raw/Archive_22670.asd"), 
+result <-  POST(paste0(server, '/SoilSpectra/Upload'), body = list(fileinfo = upload_file("C:/Projects/Spectra/Archive_20392.asd"), 
                                                                     attribute='SOC',  
                                                                     longitude='151.2345', 
                                                                     latitude='-25.7777', 

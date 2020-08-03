@@ -11,30 +11,29 @@ library(Rook)
 
 
 
-#rootDir <- 'C:/Users/sea084/Dropbox/RossRCode/Git/Spectra'
-
-
 machineName <- as.character(Sys.info()['nodename'])
 print(machineName)
 
 
-if(machineName == 'FANCY-DP'){
+if(machineName == 'WALCOT-SL'){
   apiDevRootDir <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev'
   conPath <<- 'C:/Projects/SMIPS/SFS/sfs.db'
   sfsDatRoot <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev'
   SpectraRootDir <- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev/Spectra'
+  spectraStore <- 'C:/Projects/Spectra'
 }else{
   apiDevRootDir <<- '/srv/plumber/APIDev'
   conPath <<- '/mnt/data/RegionalSoilMoisture/sfs.db'
   sfsDatRoot <<- '/mnt/data'
   SpectraRootDir <- '/srv/plumber/APIDev/Spectra'
+  spectraStore <- 'xxx'
 }
 
 
 source(paste0(apiDevRootDir, '/apiDev_Config.R'))
+source(paste0(SpectraRootDir, '/Scripts/Processing.R'))
+source(paste0(SpectraRootDir, '/SpectraAPIConfig.R'))
 
-
-machineName <- as.character(Sys.info()['nodename'])
 
 #* @apiTitle Ross' API Development Area
 #* @apiDescription Some web service endpoints to demonstrate some concepts
@@ -43,11 +42,7 @@ machineName <- as.character(Sys.info()['nodename'])
 
 
 
-msqlDriver   = "ODBC Driver 17 for SQL Server"
-msqlServer   = "asris-sql-stage.it.csiro.au\\sql2017"
-msqlDatabase = "NatSoil_Ross"
-msqlUID      = 'rosssearle'
-msqlPWD      = 'Ads@2*&5cv'
+
 
 library(odbc)
 sort(unique(odbcListDrivers()[[1]]))
@@ -103,11 +98,12 @@ function(req, res, verbose=T, format='json'){
 
 #* Specify a spectra ID and get info back
 #* @param format (Optional) format of the response to return. Either json, csv, or xml. Default = json
+#* @param type The type od spectra being submitted - there is a defined set of choices - currently only 'ASD'
 #* @param spectraID The ASRIS Spectra ID
 #* @param attribute Attribute to return a value for
 #* @tag Spectra Processing
 #* @get /SoilSpectra/querySpectra
-function(req, res, spectraID, attribute, format='json'){
+function(req, res, spectraID, attribute, type, format='json'){
   # cat("---- New Upload request ----\n")
   
   con <- DBI::dbConnect(odbc::odbc(),
@@ -119,7 +115,8 @@ function(req, res, spectraID, attribute, format='json'){
                        
   )
   
-  att <- "Organic carbon"
+  #att <- "Organic carbon"
+  #attribute<-att
   
   
   sql <- paste0("SELECT ARCHIVE_SAMPLES.spec_id, OBSERVATIONS.agency_code, OBSERVATIONS.proj_code, OBSERVATIONS.s_id, OBSERVATIONS.o_id, HORIZONS.h_no, SAMPLES.samp_no, OBSERVATIONS.o_date_desc, OBSERVATIONS.o_longitude_GDA94, OBSERVATIONS.o_latitude_GDA94, SAMPLES.samp_upper_depth, SAMPLES.samp_lower_depth, LAB_RESULTS.labm_code, LAB_METHODS.LABM_SHORT_NAME, LAB_METHODS.LABM_NAME, LAB_RESULTS.labr_date, LAB_RESULTS.labr_value, LAB_METHODS.LABM_UNITS 
@@ -136,6 +133,7 @@ function(req, res, spectraID, attribute, format='json'){
   
   sPath <- paste0(SpectraRootDir, '/Library/raw/Archive_', spectraID, '.asd')
   spectra <- as.data.frame(get_spectra(sPath, type = "reflectance"))
+  print(spectra)
   
   val <- getAttributeValue(attribute, spectra)
   df$ModelledValue <- val
@@ -152,31 +150,35 @@ function(req, res, spectraID, attribute, format='json'){
 #* @param format (Optional) format of the response to return. Either json, csv, or xml. Default = json
 #* @tag Spectra Processing
 #* @post /SoilSpectra/Upload
-function(req, res, format='json'){
+function(req, res, type, lattitude, longitude, upperDepth, lowerDepth, user, format='json'){
   # cat("---- New Upload request ----\n")
   
   upload <- list(formContents = Multipart$parse(req))
   
-  fromF = upload$formContents$fileinfo$tempfile
-  toF <- paste0(SpectraRootDir, '/Library/Uploads/',upload$formContents$fileinfo$filename)
-  print(fromF)
-  print(toF)
+  print( upload$formContents$fileinfo$tempfile)
   
-
-  file.copy(fromF, toF , overwrite = T )
-  
-  spectra <- as.data.frame(get_spectra(paste0(SpectraRootDir, '/Library/Uploads/', upload$formContents$fileinfo$filename), type = "reflectance"))
-  
-  spName <- str_remove_all(upload$formContents$fileinfo$filename, '.asd')
-  val <- getAttributeValue(upload$formContents$attribute, spectra)
-  
-  
-  outdf <- data.frame(ASRIS_Spectra_ID='1748', Spectra_Name=spName, SoilAttribute=upload$formContents$attribute, Modelled_Value=val,  
-                      Latitude=upload$formContents$latitude, Longitude=upload$formContents$longitude, 
-                      Upperdepth=upload$formContents$upperdepth, Lowerdepth=upload$formContents$lowerdepth, Raw_Spectra='NULL')
-  outdf$Raw_Spectra <- spectra
-  
-  outdf$Modelled_Value <- val
+   submitSpectra( specPath = upload$formContents$fileinfo$tempfile, type, lattitude, longitude, upperDepth, lowerDepth, user)
+  # 
+  # fromF = upload$formContents$fileinfo$tempfile
+  # toF <- paste0(SpectraRootDir, '/Library/Uploads/',upload$formContents$fileinfo$filename)
+  # print(fromF)
+  # print(toF)
+  # 
+  # 
+  # file.copy(fromF, toF , overwrite = T )
+  # 
+  # spectra <- as.data.frame(get_spectra(paste0(SpectraRootDir, '/Library/Uploads/', upload$formContents$fileinfo$filename), type = "reflectance"))
+  # 
+  # spName <- str_remove_all(upload$formContents$fileinfo$filename, '.asd')
+  # val <- getAttributeValue(upload$formContents$attribute, spectra)
+  # 
+  # 
+  # outdf <- data.frame(ASRIS_Spectra_ID='1748', Spectra_Name=spName, SoilAttribute=upload$formContents$attribute, Modelled_Value=val,  
+  #                     Latitude=upload$formContents$latitude, Longitude=upload$formContents$longitude, 
+  #                     Upperdepth=upload$formContents$upperdepth, Lowerdepth=upload$formContents$lowerdepth, Raw_Spectra='NULL')
+  # outdf$Raw_Spectra <- spectra
+  # 
+  # outdf$Modelled_Value <- val
   
   label <- 'Values'
   resp <- cerealize(outdf, label, upload$formContents$format, res)
@@ -442,35 +444,7 @@ getSampleLocationsZip <- function(res, PaddockID, NumberOfSamples = 8 ){
 
 
 
-###########################   Spectra Specific Functions  #####################################
 
-
-trimSpec <- function(spectra, wavlimits) {
-  datawavs <- as.numeric(names(spectra))
-  limits <- which(datawavs %in% wavlimits)
-  kept_index <- seq(limits[1], limits[2], 1)
-  trimmed_spectra <- spectra[, kept_index]
-  kept_names <- datawavs[kept_index]
-  colnames(trimmed_spectra) <- kept_names
-  return(trimmed_spectra)}
-
-models <- c(SOC='SOC_Model_V2.rds', BD='BD_Model_V2.rds')
-
-getAttributeValue <- function(att, spectra){
-  
-  
-  modelName <- models[att]
-  modelPath <- paste0(SpectraRootDir, '/Models/', modelName)
-  model <- readRDS(modelPath)
-  
-  nc<-5 # no. components to use
-  # to predict value based on a given spectra (calibration data)
-  spectra <- trimSpec(spectra, wavlimits = c(453,2500))
-  modelDat <- data.frame(TV = 0, NIR = I(as.matrix(spectra)))
-  soil.pls_predict <- predict(model, ncomp = nc, newdata = modelDat)
-  
-  return (soil.pls_predict[1,1,1])
-}
 
 
 cerealize <- function(DF, label, format, res){
