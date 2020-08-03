@@ -10,24 +10,24 @@ library(Rook)
 
 
 
-submitSpectra <- function(specType, specPath, latitude, longitude, upperDepth, lowerDepth, user){
+submitSpectra <- function(specType, specPath, latitude, longitude, upperDepth, lowerDepth, userName){
 
     
-    sp <- storeSpectraFile(specType, specPath, latitude, longitude, upperDepth, lowerDepth, user)
+    sp <- storeSpectraFile(specType, specPath, latitude, longitude, upperDepth, lowerDepth, userName)
     
-     spec <- loadSpectraFromFile(sp, specType)
+      spec <- loadSpectraFromFile(sp, specType)
+      
+      specDF <- convertSpectraToDataframe(spec)
+      insertSpecIntoDB(specDF, specType, specPath, latitude, longitude, upperDepth, lowerDepth, userName)
      
-     specDF <- convertSpectraToDataframe(spec)
-     insertSpecIntoDB(specDF, specType, specPath, latitude, longitude, upperDepth, lowerDepth, user)
-
-    if(str_to_upper(specType) == 'ASD'){
-      outdf <-  predictASDValues(spectra = spec)
-    }else{
-        stop("This spectra type not supported as yet")
-    }
+     if(str_to_upper(specType) == 'ASD'){
+       outdf <-  predictASDValues(spectra = spec)
+     }else{
+         stop("This spectra type not supported as yet")
+     }
 
     
-    #return("hi")
+   # return("hi")
    return(outdf)
 
 }
@@ -40,10 +40,12 @@ convertSpectraToDataframe <- function(spectra){
 
 loadSpectraFromFile <- function(specPath, specType){
   
+  
+  print('###########   HERE1   ############')
   if(file.exists(specPath)){
     
     if(str_to_upper(specType) == 'ASD'){
-        spectra <- as.data.frame(asdreader::get_spectra(sp, type = "reflectance"))
+        spectra <- as.data.frame(asdreader::get_spectra(specPath, type = "reflectance"))
     }else{
       stop("This spectra type not supported as yet")
     }
@@ -55,12 +57,12 @@ loadSpectraFromFile <- function(specPath, specType){
   return(spectra)
 }
 
-storeSpectraFile <- function(type, specPath, latitude, longitude, upperDepth, lowerDepth, user){
+storeSpectraFile <- function(type, specPath, latitude, longitude, upperDepth, lowerDepth, userName){
   
   specPath = specPath
-  toDir <- paste0(spectraStore, '/Library/Uploads/', user)
+  toDir <- paste0(spectraStore, '/Library/Uploads/', userName)
   if(!dir.exists(toDir)){dir.create(toDir, recursive = T)}
-  toPath <- paste0(toDir, '/', user, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'.', str_to_lower(type))
+  toPath <- paste0(toDir, '/', userName, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'.', str_to_lower(type))
   
   print(specPath)
   print(toPath)

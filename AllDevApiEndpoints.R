@@ -151,25 +151,25 @@ function(req, res, spectraID, attribute, type, format='json'){
 
 #* @tag Spectra Processing
 #* @post /SoilSpectra/Upload
-function(req, res, type, lattitude, longitude, upperDepth, lowerDepth, user, format='json'){
+function(req, res, type, lattitude, longitude, upperDepth, lowerDepth, userName, format='json'){
   # cat("---- New Upload request ----\n")
   
   upload <- list(formContents = Multipart$parse(req))
   
-  print( upload$formContents)
-  print( upload$formContents$fileinfo$tempfile)
-  
+   print( upload$formContents)
+  # print( upload$formContents$fileinfo$tempfile)
+  # 
   path <- upload$formContents$fileinfo$tempfile
   specType <- upload$formContents$specType
   longitude <- upload$formContents$longitude
   latitude <- upload$formContents$latitude
   upperDepth <- upload$formContents$upperDepth
   lowerDepth <- upload$formContents$lowerDepth
-  user <- upload$formContents$user
+  userName <- upload$formContents$userName
   
-  print(paste0("################################ : ", user))
+  print(paste0("################################ : ", userName))
   
-  outdf = submitSpectra(specType, specPath = upload$formContents$fileinfo$tempfile, latitude, longitude, upperDepth, lowerDepth, user)
+  outdf<-submitSpectra(specType, specPath = upload$formContents$fileinfo$tempfile, latitude, longitude, upperDepth, lowerDepth, userName)
   # 
   # fromF = upload$formContents$fileinfo$tempfile
   # toF <- paste0(SpectraRootDir, '/Library/Uploads/',upload$formContents$fileinfo$filename)
