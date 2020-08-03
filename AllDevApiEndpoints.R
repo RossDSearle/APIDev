@@ -148,6 +148,7 @@ function(req, res, spectraID, attribute, type, format='json'){
 
 #* Load a spectra and get back the a modelled attribute value
 #* @param format (Optional) format of the response to return. Either json, csv, or xml. Default = json
+
 #* @tag Spectra Processing
 #* @post /SoilSpectra/Upload
 function(req, res, type, lattitude, longitude, upperDepth, lowerDepth, user, format='json'){
@@ -155,9 +156,20 @@ function(req, res, type, lattitude, longitude, upperDepth, lowerDepth, user, for
   
   upload <- list(formContents = Multipart$parse(req))
   
+  print( upload$formContents)
   print( upload$formContents$fileinfo$tempfile)
   
-   submitSpectra( specPath = upload$formContents$fileinfo$tempfile, type, lattitude, longitude, upperDepth, lowerDepth, user)
+  path <- upload$formContents$fileinfo$tempfile
+  specType <- upload$formContents$specType
+  longitude <- upload$formContents$longitude
+  latitude <- upload$formContents$latitude
+  upperDepth <- upload$formContents$upperDepth
+  lowerDepth <- upload$formContents$lowerDepth
+  user <- upload$formContents$user
+  
+  print(paste0("################################ : ", user))
+  
+  outdf = submitSpectra(specType, specPath = upload$formContents$fileinfo$tempfile, latitude, longitude, upperDepth, lowerDepth, user)
   # 
   # fromF = upload$formContents$fileinfo$tempfile
   # toF <- paste0(SpectraRootDir, '/Library/Uploads/',upload$formContents$fileinfo$filename)

@@ -10,15 +10,15 @@ library(Rook)
 
 
 
-submitSpectra <- function(specType, specPath, lattitude, longitude, upperDepth, lowerDepth, user){
+submitSpectra <- function(specType, specPath, latitude, longitude, upperDepth, lowerDepth, user){
 
     
-    sp <- storeSpectraFile(type, specPath, lattitude, longitude, upperDepth, lowerDepth, user)
+    sp <- storeSpectraFile(specType, specPath, latitude, longitude, upperDepth, lowerDepth, user)
     
-    spec <- loadSpectraFromFile(sp, type)
+    spec <- loadSpectraFromFile(sp, specType)
     
     specDF <- convertSpectraToDataframe(spec)
-    insertSpecIntoDB(specDF, type, specPath, lattitude, longitude, upperDepth, lowerDepth, user)
+    insertSpecIntoDB(specDF, specType, specPath, latitude, longitude, upperDepth, lowerDepth, user)
     
     if(str_to_upper(specType) == 'ASD'){
       outdf <-  predictASDValues(spectra = spec)
@@ -28,12 +28,7 @@ submitSpectra <- function(specType, specPath, lattitude, longitude, upperDepth, 
 
     
     
-    outdf <- data.frame(ASRIS_Spectra_ID='1748', Spectra_Name=spName, SoilAttribute=upload$formContents$attribute, Modelled_Value=val,  
-                        Latitude=upload$formContents$latitude, Longitude=upload$formContents$longitude, 
-                        Upperdepth=upload$formContents$upperdepth, Lowerdepth=upload$formContents$lowerdepth, Raw_Spectra='NULL')
-    outdf$Raw_Spectra <- spectra
-
-outdf$Modelled_Value <- val
+   return(outdf)
 
 }
 
@@ -62,13 +57,12 @@ loadSpectraFromFile <- function(specPath, specType){
   return(spectra)
 }
 
-storeSpectraFile <- function(type, specPath, lattitude, longitude, upperDepth, lowerDepth, user){
+storeSpectraFile <- function(type, specPath, latitude, longitude, upperDepth, lowerDepth, user){
   
   specPath = specPath
-  #toF <- paste0(SpectraRootDir, '/Library/Uploads/',upload$formContents$fileinfo$filename)
   toDir <- paste0(spectraStore, '/library/Uploads/', user)
   if(!dir.exists(toDir)){dir.create(toDir, recursive = T)}
-  toPath <- paste0(toDir, '/', user, '_',Sys.Date(), '_', lattitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'.', str_to_lower(type))
+  toPath <- paste0(toDir, '/', user, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'.', str_to_lower(type))
   
   res <- file.copy(specPath, toPath , overwrite = T )
   
@@ -136,9 +130,9 @@ getASDAttributeValue <- function(att, spectra){
 
 
 
-insertSpecIntoDB <- function(specDF, type, specPath, lattitude, longitude, upperDepth, lowerDepth, user) {
+insertSpecIntoDB <- function(specDF, type, specPath, latitude, longitude, upperDepth, lowerDepth, user) {
 
-  specID <- paste0( user, '_',Sys.Date(), '_', lattitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'_', str_to_lower(type), '_', as.integer(Sys.time()))
+  specID <- paste0( user, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'_', str_to_lower(type), '_', as.integer(Sys.time()))
   
 
 con <- DBI::dbConnect(odbc::odbc(),
@@ -188,7 +182,7 @@ VALUES ('", DEF_agency_code, "', 'spectest', '", newID, "', '1', 1, 1, 1, 'xx', 
 dbExecute(con, archiveSQL) 
 
 toDir <- paste0(spectraStore, '/library/Uploads/', user)
-toPath <- paste0(toDir, '/', user, '_',Sys.Date(), '_', lattitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'.', str_to_lower(type))
+toPath <- paste0(toDir, '/', user, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'.', str_to_lower(type))
 metaSQL <- paste0("INSERT INTO spectra_meta([SpectraNum], [SpectraID], [DataPath], [Type] ,[Username])
 VALUES (",newaID, ",'", specID, "','",toPath, "','", type ,  "', '", user, "')")
 dbExecute(con, metaSQL) 
