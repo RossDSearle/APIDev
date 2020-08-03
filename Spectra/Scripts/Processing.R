@@ -15,11 +15,11 @@ submitSpectra <- function(specType, specPath, latitude, longitude, upperDepth, l
     
     sp <- storeSpectraFile(specType, specPath, latitude, longitude, upperDepth, lowerDepth, user)
     
-    spec <- loadSpectraFromFile(sp, specType)
-    
-    specDF <- convertSpectraToDataframe(spec)
-    insertSpecIntoDB(specDF, specType, specPath, latitude, longitude, upperDepth, lowerDepth, user)
-    
+     spec <- loadSpectraFromFile(sp, specType)
+     
+     specDF <- convertSpectraToDataframe(spec)
+     insertSpecIntoDB(specDF, specType, specPath, latitude, longitude, upperDepth, lowerDepth, user)
+
     if(str_to_upper(specType) == 'ASD'){
       outdf <-  predictASDValues(spectra = spec)
     }else{
@@ -27,7 +27,7 @@ submitSpectra <- function(specType, specPath, latitude, longitude, upperDepth, l
     }
 
     
-    
+    #return("hi")
    return(outdf)
 
 }
@@ -44,8 +44,6 @@ loadSpectraFromFile <- function(specPath, specType){
     
     if(str_to_upper(specType) == 'ASD'){
         spectra <- as.data.frame(asdreader::get_spectra(sp, type = "reflectance"))
-       
-        
     }else{
       stop("This spectra type not supported as yet")
     }

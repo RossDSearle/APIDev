@@ -6,7 +6,7 @@ library(RCurl)
 library(htmltidy)
 
 server <- 'http://esoil.io/APIDev'
-server <- 'http://127.0.0.1:4820'
+server <- 'http://127.0.0.1:8911'
 server <- 'http://rstudio.esoil.io/p/f240d969'
 #curl -X GET "http://127.0.0.1:6026/SoilSpectra/availableSpectra" -H  "accept: application/json"
 
