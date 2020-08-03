@@ -60,10 +60,12 @@ loadSpectraFromFile <- function(specPath, specType){
 storeSpectraFile <- function(type, specPath, latitude, longitude, upperDepth, lowerDepth, user){
   
   specPath = specPath
-  toDir <- paste0(spectraStore, '/library/Uploads/', user)
+  toDir <- paste0(spectraStore, '/Library/Uploads/', user)
   if(!dir.exists(toDir)){dir.create(toDir, recursive = T)}
   toPath <- paste0(toDir, '/', user, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'.', str_to_lower(type))
   
+  print(specPath)
+  print(toPath)
   res <- file.copy(specPath, toPath , overwrite = T )
   
   if(res){
@@ -181,7 +183,7 @@ archiveSQL <- paste0("INSERT INTO ARCHIVE_SAMPLES(agency_code, proj_code, s_id, 
 VALUES ('", DEF_agency_code, "', 'spectest', '", newID, "', '1', 1, 1, 1, 'xx', 'here', 123, 1,", newaID, ", '', '');")
 dbExecute(con, archiveSQL) 
 
-toDir <- paste0(spectraStore, '/library/Uploads/', user)
+toDir <- paste0(spectraStore, '/Library/Uploads/', user)
 toPath <- paste0(toDir, '/', user, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'.', str_to_lower(type))
 metaSQL <- paste0("INSERT INTO spectra_meta([SpectraNum], [SpectraID], [DataPath], [Type] ,[Username])
 VALUES (",newaID, ",'", specID, "','",toPath, "','", type ,  "', '", user, "')")

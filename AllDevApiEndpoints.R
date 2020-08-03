@@ -19,14 +19,14 @@ if(machineName == 'WALCOT-SL'){
   apiDevRootDir <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev'
   conPath <<- 'C:/Projects/SMIPS/SFS/sfs.db'
   sfsDatRoot <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev'
-  SpectraRootDir <- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev/Spectra'
-  spectraStore <- 'C:/Projects/Spectra'
+  SpectraRootDir <<- 'C:/Users/sea084/Dropbox/RossRCode/Git/APIDev/Spectra'
+  spectraStore <<- 'C:/Projects/Spectra'
 }else{
   apiDevRootDir <<- '/srv/plumber/APIDev'
   conPath <<- '/mnt/data/RegionalSoilMoisture/sfs.db'
   sfsDatRoot <<- '/mnt/data'
-  SpectraRootDir <- '/srv/plumber/APIDev/Spectra'
-  spectraStore <- 'xxx'
+  SpectraRootDir <<- '/srv/plumber/APIDev/Spectra'
+  spectraStore <<- '/mnt/data/Spectra'
 }
 
 

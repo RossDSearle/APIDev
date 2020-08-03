@@ -7,6 +7,7 @@ library(htmltidy)
 
 server <- 'http://esoil.io/APIDev'
 server <- 'http://127.0.0.1:4820'
+server <- 'http://rstudio.esoil.io/p/f240d969'
 #curl -X GET "http://127.0.0.1:6026/SoilSpectra/availableSpectra" -H  "accept: application/json"
 
 #  You can copy the urls below directly into your browser or run the R code below to see the results
@@ -73,5 +74,21 @@ jsonview::json_tree_view(js)
 
 
 
+
+
+# Upload a local spectra file (.asd) and run it through a model to estimate a value - this is a post request so a bit different to the above
+result <-  POST(paste0(server, '/SoilSpectra/Upload'), body = list(fileinfo = upload_file("/mnt/data/Spectra/Library/raw/Archive_20392.asd"), 
+                                                                   attribute='SOC',  
+                                                                   longitude='151.2345', 
+                                                                   latitude='-25.7777', 
+                                                                   upperDepth='0.0', 
+                                                                   lowerDepth='.25',
+                                                                   user='Ross',
+                                                                   specType='ASD',
+                                                                   format='json'
+                                                                   
+))
+js <- content(result, "text")
+jsonview::json_tree_view(js)
 
 
