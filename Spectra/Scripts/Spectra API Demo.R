@@ -6,7 +6,7 @@ library(RCurl)
 library(htmltidy)
 
 server <- 'http://esoil.io/APIDev'
-server <- 'http://127.0.0.1:8911'
+server <- 'http://127.0.0.1:8142'
 server <- 'http://rstudio.esoil.io/p/f240d969'
 #curl -X GET "http://127.0.0.1:6026/SoilSpectra/availableSpectra" -H  "accept: application/json"
 
@@ -63,7 +63,7 @@ result <-  POST(paste0(server, '/SoilSpectra/Upload'), body = list(fileinfo = up
                                                                     latitude='-25.7777', 
                                                                     upperDepth='0.0', 
                                                                     lowerDepth='.25',
-                                                                    user='Ross',
+                                                                    userName='Ross',
                                                                     specType='ASD',
                                                                     format='json'
                                                                    
@@ -71,8 +71,12 @@ result <-  POST(paste0(server, '/SoilSpectra/Upload'), body = list(fileinfo = up
 js <- content(result, "text")
 jsonview::json_tree_view(js)
 
+d <- fromJSON(js)
+d$Metadata
+d$SoilValues
+plot(d$Spectrum)
 
-
+fromJSON(js)
 
 
 

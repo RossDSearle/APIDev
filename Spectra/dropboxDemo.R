@@ -19,3 +19,11 @@ saveRDS(token, file = "c:/temp/test/token.rds")
 library(dplyr)
 drop_acc() %>% data.frame()
 drop_dir('Data Exchange')  %>% data.frame()
+
+
+
+print(drop_acc(dtoken = token))
+fls <- drop_dir(dropBoxPath, dtoken = token)  %>% data.frame()
+spectraFiles <- fls$name
+
+drop_download(path='spectrafiles/ross/archive_20392.asd', local_path = 'c:/temp/atest.dat',dtoken = token  )

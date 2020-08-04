@@ -10,25 +10,43 @@ library(Rook)
 
 
 
-submitSpectra <- function(specType, specPath, latitude, longitude, upperDepth, lowerDepth, userName){
+submitSpectra <- function(specType, origName, specPath, latitude, longitude, upperDepth, lowerDepth, userName){
 
+  print(specPath)
     
-    sp <- storeSpectraFile(specType, specPath, latitude, longitude, upperDepth, lowerDepth, userName)
+    submitTime <- Sys.time()
+    specID <- paste0( userName, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'_', str_to_upper(specType), '_', as.integer(submitTime), '_', origName)
+    print(paste0('SpecID : ', specID))
+    sp <- storeSpectraFile(specID, specType, specPath, userName)
     
       spec <- loadSpectraFromFile(sp, specType)
       
       specDF <- convertSpectraToDataframe(spec)
-      insertSpecIntoDB(specDF, specType, specPath, latitude, longitude, upperDepth, lowerDepth, userName)
+      insertSpecIntoDB(specID, specDF, specType, specPath, latitude, longitude, upperDepth, lowerDepth, userName, submitTime, origName)
+      print(str(specDF))
      
      if(str_to_upper(specType) == 'ASD'){
        outdf <-  predictASDValues(spectra = spec)
      }else{
          stop("This spectra type not supported as yet")
      }
+      
+      wavCnt <- nrow(specDF)
+      minVal <- min(specDF$value)
+      maxVal <- max(specDF$value)
+      minWav <- min(specDF$wavelength)
+      maxWav <- max(specDF$wavelength)
 
-    
+      mFields <- c( 'SpectraID', 'OriginalFileName', 'TimeSubmitted', 'SpectraType','UserName', 'Latitude', 'Longitude', 'UpperDepth', 'LowerDepth', 'WavelengthsCount', 'MinimumWavelength', 'MaximumWavelength',  'MinimumValue' , 'MaximumValue' )
+      mVals <- c(specID, origName, submitTime, specType, userName,  latitude, longitude, upperDepth, lowerDepth , wavCnt, minWav, maxWav, minVal, maxVal)
+      metadataDF <- data.frame(Attribute=mFields,Value=mVals)
+      
+    odf <- NULL
+    odf$Metadata <- metadataDF
+    odf$SoilValues <- outdf
+    odf$Spectrum <- specDF
    # return("hi")
-   return(outdf)
+   return(odf)
 
 }
 
@@ -57,12 +75,12 @@ loadSpectraFromFile <- function(specPath, specType){
   return(spectra)
 }
 
-storeSpectraFile <- function(type, specPath, latitude, longitude, upperDepth, lowerDepth, userName){
+storeSpectraFile <- function(specID, type, specPath,  userName){
   
   specPath = specPath
   toDir <- paste0(spectraStore, '/Library/Uploads/', userName)
   if(!dir.exists(toDir)){dir.create(toDir, recursive = T)}
-  toPath <- paste0(toDir, '/', userName, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'.', str_to_lower(type))
+  toPath <- paste0(toDir, '/',specID)
   
   print(specPath)
   print(toPath)
@@ -132,9 +150,9 @@ getASDAttributeValue <- function(att, spectra){
 
 
 
-insertSpecIntoDB <- function(specDF, type, specPath, latitude, longitude, upperDepth, lowerDepth, user) {
+insertSpecIntoDB <- function(specID, specDF, type, specPath, latitude, longitude, upperDepth, lowerDepth, user, submitTime, origName) {
 
-  specID <- paste0( user, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'_', str_to_lower(type), '_', as.integer(Sys.time()))
+  #specID <- paste0( user, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'_', str_to_lower(type), '_', as.integer(submitTime))
   
 
 con <- DBI::dbConnect(odbc::odbc(),
@@ -185,8 +203,8 @@ dbExecute(con, archiveSQL)
 
 toDir <- paste0(spectraStore, '/Library/Uploads/', user)
 toPath <- paste0(toDir, '/', user, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'.', str_to_lower(type))
-metaSQL <- paste0("INSERT INTO spectra_meta([SpectraNum], [SpectraID], [DataPath], [Type] ,[Username])
-VALUES (",newaID, ",'", specID, "','",toPath, "','", type ,  "', '", user, "')")
+metaSQL <- paste0("INSERT INTO spectra_meta([SpectraNum], [SpectraID], [DataPath], [Type] ,[Username], [SubmitTime] ,[Lattitude], [Longitude], [UpperDepth], [LowerDepth], [OriginalName])
+VALUES (",newaID, ",'", specID, "','",toPath, "','", type ,  "', '", user ,  "', '",  submitTime ,  "', ",  latitude ,  ", ",  longitude ,  ", ", upperDepth ,  ", ", lowerDepth ,  ", '", origName, "')")
 dbExecute(con, metaSQL) 
 
 

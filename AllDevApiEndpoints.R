@@ -167,9 +167,9 @@ function(req, res, type, lattitude, longitude, upperDepth, lowerDepth, userName,
   lowerDepth <- upload$formContents$lowerDepth
   userName <- upload$formContents$userName
   
-  print(paste0("################################ : ", userName))
+  print(paste0("################################ : ", basename(upload$formContents$fileinfo$filename)))
   
-  outdf<-submitSpectra(specType, specPath = upload$formContents$fileinfo$tempfile, latitude, longitude, upperDepth, lowerDepth, userName)
+  outdf<-submitSpectra(specType, origName = basename(upload$formContents$fileinfo$filename), specPath = upload$formContents$fileinfo$tempfile, latitude, longitude, upperDepth, lowerDepth, userName)
   # 
   # fromF = upload$formContents$fileinfo$tempfile
   # toF <- paste0(SpectraRootDir, '/Library/Uploads/',upload$formContents$fileinfo$filename)
