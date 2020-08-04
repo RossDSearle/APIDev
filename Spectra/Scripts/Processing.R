@@ -12,18 +12,18 @@ library(Rook)
 
 submitSpectra <- function(specType, origName, specPath, latitude, longitude, upperDepth, lowerDepth, userName){
 
-  print(specPath)
+  #print(specPath)
     
     submitTime <- Sys.time()
     specID <- paste0( userName, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'_', str_to_upper(specType), '_', as.integer(submitTime), '_', origName)
-    print(paste0('SpecID : ', specID))
+   # print(paste0('SpecID : ', specID))
     sp <- storeSpectraFile(specID, specType, specPath, userName)
     
       spec <- loadSpectraFromFile(sp, specType)
       
       specDF <- convertSpectraToDataframe(spec)
       insertSpecIntoDB(specID, specDF, specType, specPath, latitude, longitude, upperDepth, lowerDepth, userName, submitTime, origName)
-      print(str(specDF))
+    #  print(str(specDF))
      
      if(str_to_upper(specType) == 'ASD'){
        outdf <-  predictASDValues(spectra = spec)

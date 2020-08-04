@@ -7,7 +7,7 @@ library(raster)
 #portNum <<- 8029
 #portNum <<- 8031
 
-source(paste0(apiDevRootDir, '/AgX/AgXMethods.R'))
+#source(paste0(apiDevRootDir, '/AgX/AgXMethods.R'))
 source(paste0(apiDevRootDir, '/SFS/SFSMethods.R'))
 
 
