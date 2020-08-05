@@ -10,8 +10,11 @@ msqlPWD      = 'Ads@2*&5cv'
 
 models <- c(SOC='SOC_Model_V2.rds', BD='BD_Model_V2.rds')
 modelNames <- c('SOC', 'BD')
-availAtts <- data.frame(modelNames, models)
+labcodes <- c('6A1', '4A1')
+availAtts <- data.frame(modelNames, models, labcodes)
 
 DEF_agency_code='601' 
-DEF_proj_code='spectest'
+DEF_proj_code='SpecDemo'
+
+DEF_User='DemoUser'
 

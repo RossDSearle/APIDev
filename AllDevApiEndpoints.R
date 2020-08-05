@@ -50,46 +50,25 @@ sort(unique(odbcListDrivers()[[1]]))
 #* Get a list of the Spectra Avaliable in Natsoil
 #* @param format (Optional) format of the response to return. Either json, csv, or xml. Default = json
 #* @param verbose return just the IDs or all of the data in the ASRIS database
+#* @param bbox rectangular window in geographic coordinates (minx;miny;maxx;maxy) - NOT IMPLEMENTED YET
+#* @param enddate filter on an end date (dd-mm-yyyy) - NOT IMPLEMENTED YET
+#* @param startdate filter on start date (dd-mm-yyyy) - NOT IMPLEMENTED YET
+#* @param username filter on a specific user
 #* @tag Spectra Processing
 #* @get /SoilSpectra/availableSpectra
-function(req, res, verbose=T, format='json'){
+function(req, res, username, verbose=T, format='json'){
   
-  fls <- list.files(paste0(SpectraRootDir, '/Library/raw'), '.asd')
-  fls <- str_remove(fls , 'Archive_')
-  fls <- str_remove(fls , '.asd') 
-  fls <- paste0("'", fls, "'")
+  df <- getAvalailableSpectra(projCode, userName)
   
-  qry1 <- paste(fls,  collapse = ',')
-  spectraIDs <- paste0(' IN (', qry1, ')')
-  con <- DBI::dbConnect(odbc::odbc(),
-                        Driver   = msqlDriver,
-                        Server   = msqlServer,
-                        Database = msqlDatabase,
-                        UID      = msqlUID,
-                        PWD      = msqlPWD
-                        
-                        )
-                        # ,  Trusted_Connection = "Yes")
-  
-  att <- "Organic carbon"
-  
-  
-  sql <- paste0("SELECT ARCHIVE_SAMPLES.spec_id, OBSERVATIONS.agency_code, OBSERVATIONS.proj_code, OBSERVATIONS.s_id, OBSERVATIONS.o_id, HORIZONS.h_no, SAMPLES.samp_no, OBSERVATIONS.o_date_desc, OBSERVATIONS.o_longitude_GDA94, OBSERVATIONS.o_latitude_GDA94, SAMPLES.samp_upper_depth, SAMPLES.samp_lower_depth, LAB_RESULTS.labm_code, LAB_METHODS.LABM_SHORT_NAME, LAB_METHODS.LABM_NAME, LAB_RESULTS.labr_date, LAB_RESULTS.labr_value, LAB_METHODS.LABM_UNITS 
-              FROM (((((SITES INNER JOIN OBSERVATIONS ON (SITES.s_id = OBSERVATIONS.s_id) AND (SITES.proj_code = OBSERVATIONS.proj_code) AND (SITES.agency_code = OBSERVATIONS.agency_code)) INNER JOIN HORIZONS ON (OBSERVATIONS.o_id = HORIZONS.o_id) AND (OBSERVATIONS.s_id = HORIZONS.s_id) AND (OBSERVATIONS.proj_code = HORIZONS.proj_code) AND (OBSERVATIONS.agency_code = HORIZONS.agency_code)) INNER JOIN SAMPLES ON (HORIZONS.h_no = SAMPLES.h_no) AND (HORIZONS.o_id = SAMPLES.o_id) AND (HORIZONS.s_id = SAMPLES.s_id) AND (HORIZONS.proj_code = SAMPLES.proj_code) AND (HORIZONS.agency_code = SAMPLES.agency_code)) INNER JOIN LAB_RESULTS ON (SAMPLES.samp_no = LAB_RESULTS.samp_no) AND (SAMPLES.h_no = LAB_RESULTS.h_no) AND (SAMPLES.o_id = LAB_RESULTS.o_id) AND (SAMPLES.s_id = LAB_RESULTS.s_id) AND (SAMPLES.proj_code = LAB_RESULTS.proj_code) AND (SAMPLES.agency_code = LAB_RESULTS.agency_code)) INNER JOIN ARCHIVE_SAMPLES ON (SAMPLES.samp_no = ARCHIVE_SAMPLES.samp_no) AND (SAMPLES.h_no = ARCHIVE_SAMPLES.h_no) AND (SAMPLES.o_id = ARCHIVE_SAMPLES.o_id) AND (SAMPLES.s_id = ARCHIVE_SAMPLES.s_id) AND (SAMPLES.proj_code = ARCHIVE_SAMPLES.proj_code) AND (SAMPLES.agency_code = ARCHIVE_SAMPLES.agency_code)) INNER JOIN LAB_METHODS ON LAB_RESULTS.labm_code = LAB_METHODS.LABM_CODE  
-              WHERE ARCHIVE_SAMPLES.spec_id", spectraIDs, " AND LAB_METHODS.LABM_SHORT_NAME='Organic carbon' 
-              ORDER BY OBSERVATIONS.agency_code, OBSERVATIONS.proj_code, OBSERVATIONS.s_id, OBSERVATIONS.o_id, HORIZONS.h_no, SAMPLES.samp_no")
-  
-  
-  qry <- dbSendQuery(con, sql)
-  df <- dbFetch(qry)
+  print(df)
   
   if(verbose){
     outDF <- df
   }else{
-    outDF <- df$spec_id
+    outDF <- df$SpectraID
   }
   
-  label <- 'Available_Spectra'
+  label <- 'AvailableSpectra'
   resp <- cerealize(outDF, label, format, res)
   return(resp)
 }
@@ -98,52 +77,39 @@ function(req, res, verbose=T, format='json'){
 
 #* Specify a spectra ID and get info back
 #* @param format (Optional) format of the response to return. Either json, csv, or xml. Default = json
-#* @param type The type od spectra being submitted - there is a defined set of choices - currently only 'ASD'
 #* @param spectraID The ASRIS Spectra ID
-#* @param attribute Attribute to return a value for
 #* @tag Spectra Processing
 #* @get /SoilSpectra/querySpectra
-function(req, res, spectraID, attribute, type, format='json'){
-  # cat("---- New Upload request ----\n")
+function(req, res, spectraID, type, format='json'){
   
-  con <- DBI::dbConnect(odbc::odbc(),
-                        Driver   = msqlDriver,
-                        Server   = msqlServer,
-                        Database = msqlDatabase,
-                        UID      = msqlUID,
-                        PWD      = msqlPWD
-                       
-  )
-  
-  #att <- "Organic carbon"
-  #attribute<-att
-  
-  
-  sql <- paste0("SELECT ARCHIVE_SAMPLES.spec_id, OBSERVATIONS.agency_code, OBSERVATIONS.proj_code, OBSERVATIONS.s_id, OBSERVATIONS.o_id, HORIZONS.h_no, SAMPLES.samp_no, OBSERVATIONS.o_date_desc, OBSERVATIONS.o_longitude_GDA94, OBSERVATIONS.o_latitude_GDA94, SAMPLES.samp_upper_depth, SAMPLES.samp_lower_depth, LAB_RESULTS.labm_code, LAB_METHODS.LABM_SHORT_NAME, LAB_METHODS.LABM_NAME, LAB_RESULTS.labr_date, LAB_RESULTS.labr_value, LAB_METHODS.LABM_UNITS 
-              FROM (((((SITES INNER JOIN OBSERVATIONS ON (SITES.s_id = OBSERVATIONS.s_id) AND (SITES.proj_code = OBSERVATIONS.proj_code) AND (SITES.agency_code = OBSERVATIONS.agency_code)) INNER JOIN HORIZONS ON (OBSERVATIONS.o_id = HORIZONS.o_id) AND (OBSERVATIONS.s_id = HORIZONS.s_id) AND (OBSERVATIONS.proj_code = HORIZONS.proj_code) AND (OBSERVATIONS.agency_code = HORIZONS.agency_code)) INNER JOIN SAMPLES ON (HORIZONS.h_no = SAMPLES.h_no) AND (HORIZONS.o_id = SAMPLES.o_id) AND (HORIZONS.s_id = SAMPLES.s_id) AND (HORIZONS.proj_code = SAMPLES.proj_code) AND (HORIZONS.agency_code = SAMPLES.agency_code)) INNER JOIN LAB_RESULTS ON (SAMPLES.samp_no = LAB_RESULTS.samp_no) AND (SAMPLES.h_no = LAB_RESULTS.h_no) AND (SAMPLES.o_id = LAB_RESULTS.o_id) AND (SAMPLES.s_id = LAB_RESULTS.s_id) AND (SAMPLES.proj_code = LAB_RESULTS.proj_code) AND (SAMPLES.agency_code = LAB_RESULTS.agency_code)) INNER JOIN ARCHIVE_SAMPLES ON (SAMPLES.samp_no = ARCHIVE_SAMPLES.samp_no) AND (SAMPLES.h_no = ARCHIVE_SAMPLES.h_no) AND (SAMPLES.o_id = ARCHIVE_SAMPLES.o_id) AND (SAMPLES.s_id = ARCHIVE_SAMPLES.s_id) AND (SAMPLES.proj_code = ARCHIVE_SAMPLES.proj_code) AND (SAMPLES.agency_code = ARCHIVE_SAMPLES.agency_code)) INNER JOIN LAB_METHODS ON LAB_RESULTS.labm_code = LAB_METHODS.LABM_CODE  
-              WHERE ARCHIVE_SAMPLES.spec_id=", spectraID, " AND LAB_METHODS.LABM_SHORT_NAME='Organic carbon' 
-              ORDER BY OBSERVATIONS.agency_code, OBSERVATIONS.proj_code, OBSERVATIONS.s_id, OBSERVATIONS.o_id, HORIZONS.h_no, SAMPLES.samp_no")
-  
-  
-  qry <- dbSendQuery(con, sql)
-  df <- dbFetch(qry)
-  
-  dbClearResult(qry)
-  dbDisconnect(con)
-  
-  sPath <- paste0(SpectraRootDir, '/Library/raw/Archive_', spectraID, '.asd')
-  spectra <- as.data.frame(get_spectra(sPath, type = "reflectance"))
-  print(spectra)
-  
-  val <- getAttributeValue(attribute, spectra)
-  df$ModelledValue <- val
-  df$RawSpectra <- spectra
-  
-  label <- 'SpectraInfo'
-  resp <- cerealize(df, label, format, res)
+  odf <- getFullSpectraInfo(spectraID)
+  label <- 'Values'
+  resp <- cerealize(odf, label, format, res)
   return(resp)
 }
 
+#* Specify a spectra ID for the file to return
+
+#* @param spectraID The ASRIS Spectra ID
+#* @tag Spectra Processing
+#* @serializer contentType list(type="application/octet-stream")
+#* @get /SoilSpectra/RawSpectraFile
+function(req, res, spectraID, type, format='json'){
+  
+  rec <- getSpectaFilePath(spectraID)
+  
+  filePath <- rec$DataPath
+  origName <- rec$OriginalName
+  
+  if(!file.exists(filePath)){stop("The raw spectra file cannot be found in the system.")}
+  
+  fn <- basename(filePath)
+  
+  res$setHeader("Content-Disposition", paste0("attachment; filename=", origName))
+  bin <- readBin(paste0(filePath), "raw", n=file.info(paste0(filePath))$size)
+  
+  bin
+}
 
 
 #* Load a spectra and get back the a modelled attribute value
@@ -170,27 +136,7 @@ function(req, res, type, lattitude, longitude, upperDepth, lowerDepth, userName,
   print(paste0("################################ : ", basename(upload$formContents$fileinfo$filename)))
   
   outdf<-submitSpectra(specType, origName = basename(upload$formContents$fileinfo$filename), specPath = upload$formContents$fileinfo$tempfile, latitude, longitude, upperDepth, lowerDepth, userName)
-  # 
-  # fromF = upload$formContents$fileinfo$tempfile
-  # toF <- paste0(SpectraRootDir, '/Library/Uploads/',upload$formContents$fileinfo$filename)
-  # print(fromF)
-  # print(toF)
-  # 
-  # 
-  # file.copy(fromF, toF , overwrite = T )
-  # 
-  # spectra <- as.data.frame(get_spectra(paste0(SpectraRootDir, '/Library/Uploads/', upload$formContents$fileinfo$filename), type = "reflectance"))
-  # 
-  # spName <- str_remove_all(upload$formContents$fileinfo$filename, '.asd')
-  # val <- getAttributeValue(upload$formContents$attribute, spectra)
-  # 
-  # 
-  # outdf <- data.frame(ASRIS_Spectra_ID='1748', Spectra_Name=spName, SoilAttribute=upload$formContents$attribute, Modelled_Value=val,  
-  #                     Latitude=upload$formContents$latitude, Longitude=upload$formContents$longitude, 
-  #                     Upperdepth=upload$formContents$upperdepth, Lowerdepth=upload$formContents$lowerdepth, Raw_Spectra='NULL')
-  # outdf$Raw_Spectra <- spectra
-  # 
-  # outdf$Modelled_Value <- val
+
   
   label <- 'Values'
   resp <- cerealize(outdf, label, upload$formContents$format, res)
