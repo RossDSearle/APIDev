@@ -340,11 +340,9 @@ archiveSQL <- paste0("INSERT INTO ARCHIVE_SAMPLES(agency_code, proj_code, s_id, 
 VALUES ('", DEF_agency_code, "', '", DEF_proj_code, "', '", newID, "', '1', 1, 1, 1, 'xx', 'here', 123, 1,", newSpecID, ", '', '');")
 dbExecute(con, archiveSQL) 
 
-# toDir <- paste0(spectraStore, '/Library/Uploads/', user)
-# if(!dir.exists(toDir)){dir.create(toDir)}
-# toPath <- paste0(toDir, '/', user, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'.', str_to_lower(type))
 metaSQL <- paste0("INSERT INTO SpectraMeta([SpectraID], [DataPath], [Type] ,[Username], [SubmitTime] ,[Lattitude], [Longitude], [UpperDepth], [LowerDepth], [OriginalName])
 VALUES (",newSpecID, ",'",specPath, "','", type ,  "', '", user ,  "', '",  submitTime ,  "', ",  latitude ,  ", ",  longitude ,  ", ", upperDepth ,  ", ", lowerDepth ,  ", '", origName, "')")
+print(metaSQL)
 dbExecute(con, metaSQL) 
 
 
