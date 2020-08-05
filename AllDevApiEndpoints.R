@@ -58,7 +58,9 @@ sort(unique(odbcListDrivers()[[1]]))
 #* @get /SoilSpectra/availableSpectra
 function(req, res, username, verbose=T, format='json'){
   
-  df <- getAvalailableSpectra(projCode, userName)
+  projCode='SpecDemo'
+  
+  df <- getAvalailableSpectra(projCode, username)
   
   print(df)
   

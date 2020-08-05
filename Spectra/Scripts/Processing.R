@@ -117,6 +117,8 @@ getAvalailableSpectra <- function(projCode='SpecDemo', userName='DemoUser'){
   qry <- dbSendQuery(con, sql)
   df <- dbFetch(qry)
   
+  str_trim(df)
+  
   dbClearResult(qry)
   dbDisconnect(con)
   

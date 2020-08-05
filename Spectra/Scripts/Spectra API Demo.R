@@ -7,7 +7,7 @@ library(htmltidy)
 library(jsonlite)
 
 server <- 'http://esoil.io/APIDev'
-server <- 'http://127.0.0.1:9293'
+server <- 'http://127.0.0.1:6618'
 server <- 'http://rstudio.esoil.io/p/f240d969'
 #curl -X GET "http://127.0.0.1:6026/SoilSpectra/availableSpectra" -H  "accept: application/json"
 
