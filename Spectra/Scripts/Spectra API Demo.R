@@ -59,9 +59,8 @@ xml_view(js)
 
 # Upload a local spectra file (.asd) and run it through a model to estimate a value - this is a post request so a bit different to the above
 result <-  POST(paste0(server, '/SoilSpectra/Upload'), body = list(fileinfo = upload_file("C:/Projects/Spectra/Library/raw/Archive_22800.asd"), 
-                                                                    attribute='SOC',  
-                                                                    longitude='152.2345', 
-                                                                    latitude='-25.7777', 
+                                                                    longitude='130.2345', 
+                                                                    latitude='-26.7777', 
                                                                     upperDepth='0.0', 
                                                                     lowerDepth='.25',
                                                                     userName='DemoUser',
