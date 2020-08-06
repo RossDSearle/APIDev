@@ -6,7 +6,7 @@ latitude = -26
 longitude = 150
 upperDepth = 0
 lowerDepth = 0.2
-userName='Ross'
+userName='DemoUser'
 
 origName='Archive_20782.asd'
 
