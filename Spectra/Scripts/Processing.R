@@ -35,7 +35,7 @@ getFullSpectraInfo <- function(SpecID){
   
   con <- DBI::dbConnect(odbc::odbc(), Driver = msqlDriver, Server = msqlServer,  Database = msqlDatabase, UID = msqlUID, PWD = msqlPWD)
   
-  sql <- paste0("SELECT SpectraMeta.SpectraID, SITES.agency_code, SITES.proj_code, SITES.s_id, OBSERVATIONS.o_id, HORIZONS.h_no, SAMPLES.samp_no, SpectraMeta.DataPath, SpectraMeta.Type, SpectraMeta.Username, 
+  sql <- paste0("SELECT SpectraMeta.SpectraID, SITES.agency_code, SITES.proj_code, SITES.s_id, OBSERVATIONS.o_id, HORIZONS.h_no, SAMPLES.samp_no, SpectraMeta.Type, SpectraMeta.Username, 
   SpectraMeta.SubmitTime, SpectraMeta.Lattitude, SpectraMeta.Longitude, SpectraMeta.UpperDepth, SpectraMeta.LowerDepth, SpectraMeta.OriginalName
   FROM            SITES INNER JOIN
   OBSERVATIONS ON SITES.agency_code = OBSERVATIONS.agency_code AND SITES.proj_code = OBSERVATIONS.proj_code AND SITES.s_id = OBSERVATIONS.s_id INNER JOIN
