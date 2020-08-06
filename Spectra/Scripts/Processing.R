@@ -135,7 +135,7 @@ getAvalailableSpectra <- function(projCode='SpecDemo', userName='DemoUser'){
 
 submitSpectra <- function(specType, origName, specPath, latitude, longitude, upperDepth, lowerDepth, userName){
     
-  
+  print(specPath)
   
     submitTime <- Sys.time()
     specID <- paste0( userName, '_',Sys.Date(), '_', latitude , '_', longitude, '_', upperDepth, '_',lowerDepth,'_', str_to_upper(specType), '_', as.integer(submitTime), '_', origName)
@@ -144,6 +144,10 @@ submitSpectra <- function(specType, origName, specPath, latitude, longitude, upp
     
     print(specPath)
     print(TospecPath)
+    
+    #specPath <- '/tmp/RtmpeuhGxJ/Multipartbbed4b3443'
+    
+    
     sp <- storeSpectraFile(specPath, TospecPath)
     
       spec <- loadSpectraFromFile(TospecPath, specType)
@@ -300,7 +304,7 @@ insertLabResultsIntoNatsoil <- function(dbInfo, outdf){
 
 
 
-insertSpecIntoDB <- function(specID, specDF, type, specPath, latitude, longitude, upperDepth, lowerDepth, user, submitTime, origName) {
+insertSpecIntoDB <- function(specID, specDF, type, specPath, latitude, longitude, upperDepth, lowerDepth, userName, submitTime, origName) {
 
 
 
@@ -344,13 +348,14 @@ VALUES ('", DEF_agency_code, "', '", DEF_proj_code, "', '", newID, "', '1', 1, 1
 dbExecute(con, archiveSQL) 
 
 metaSQL <- paste0("INSERT INTO SpectraMeta([SpectraID], [DataPath], [Type] ,[Username], [SubmitTime] ,[Lattitude], [Longitude], [UpperDepth], [LowerDepth], [OriginalName])
-VALUES (",newSpecID, ",'",specPath, "','", type ,  "', '", user ,  "', '",  submitTime ,  "', ",  latitude ,  ", ",  longitude ,  ", ", upperDepth ,  ", ", lowerDepth ,  ", '", origName, "')")
+VALUES (",newSpecID, ",'",specPath, "','", type ,  "', '", userName ,  "', '",  submitTime ,  "', ",  latitude ,  ", ",  longitude ,  ", ", upperDepth ,  ", ", lowerDepth ,  ", '", origName, "')")
 print(metaSQL)
 dbExecute(con, metaSQL) 
 
 
-indf <- data.frame(spectraID=newSpecID, specDF)
-DBI::dbAppendTable(con, 'Spectra',  indf)
+indf <- data.frame(spectraID=newSpecID, specDF, row.names = NULL)
+DBI::dbWriteTable(con, "Spectra", indf, append = TRUE, overwrite = FALSE)
+
 
 dbDisconnect(con)
 
