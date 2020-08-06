@@ -56,8 +56,11 @@ getFullSpectraInfo <- function(SpecID){
   specDF <- getSpectraData(SpecID = metadataDF$SpectraID)
   SoilValues <- getLabData(agencyCode=metadataDF$agency_code, projCode=metadataDF$proj_code, sid=metadataDF$s_id, o_id=metadataDF$o_id, h_no=metadataDF$h_no, samp_no=metadataDF$samp_no)
   
+  t1 <- t(metadataDF)             
+  t2 <- data.frame(Attribute=rownames(t1), Value=t1[,1], row.names = NULL)
+  
   odf <- NULL
-  odf$Metadata <- metadataDF
+  odf$Metadata <- t2
   odf$SoilValues <- SoilValues
   odf$Spectrum <- specDF
 

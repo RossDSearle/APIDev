@@ -15,6 +15,5 @@ availAtts <- data.frame(modelNames, models, labcodes)
 
 DEF_agency_code='601' 
 DEF_proj_code='SpecDemo'
-
 DEF_User='DemoUser'
 

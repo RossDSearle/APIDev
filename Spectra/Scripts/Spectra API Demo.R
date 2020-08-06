@@ -7,7 +7,7 @@ library(htmltidy)
 library(jsonlite)
 
 server <- 'http://esoil.io/APIDev'
-server <- 'http://127.0.0.1:6618'
+server <- 'http://127.0.0.1:4682'
 server <- 'http://rstudio.esoil.io/p/f240d969'
 #curl -X GET "http://127.0.0.1:6026/SoilSpectra/availableSpectra" -H  "accept: application/json"
 
@@ -60,7 +60,7 @@ xml_view(js)
 # Upload a local spectra file (.asd) and run it through a model to estimate a value - this is a post request so a bit different to the above
 result <-  POST(paste0(server, '/SoilSpectra/Upload'), body = list(fileinfo = upload_file("C:/Projects/Spectra/Library/raw/Archive_22800.asd"), 
                                                                     attribute='SOC',  
-                                                                    longitude='151.2345', 
+                                                                    longitude='152.2345', 
                                                                     latitude='-25.7777', 
                                                                     upperDepth='0.0', 
                                                                     lowerDepth='.25',
@@ -77,6 +77,12 @@ d$Metadata
 d$SoilValues
 plot(d$Spectrum, type='l', col='red')
 
-fromJSON(js)
+
+url <- paste0('http://esoil.io/APIDev/SoilSpectra/querySpectra?spectraID=9990078')
+response <-  GET(paste0(url))
+stream <- content(response, as="text", encoding	='UTF-8')
+getsp <- fromJSON(stream)
+getsp$Metadata
+
 
 
