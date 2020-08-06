@@ -2,7 +2,7 @@
 
 specPath = 'C:/Projects/Spectra/Library/raw/Archive_20782.asd'
 specType = 'ASD'
-latitude = -26
+latitude = -22
 longitude = 150
 upperDepth = 0
 lowerDepth = 0.2
