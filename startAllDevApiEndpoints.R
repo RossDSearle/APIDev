@@ -9,14 +9,15 @@ if(machineName == 'FANCY-DP'){
   server <- '127.0.0.0'
 }else{
   deployRootDir <- '/srv/plumber/APIDev'
-  server <- 'http://esoil.io'
+  #server <- 'http://esoil.io'
+  server <- '0.0.0.0'
 }
 
 
 # deploy
 portNum <- 8029
-options("plumber.host" = "0.0.0.0")
-options("plumber.apiHost" = "0.0.0.0")
+# options("plumber.host" = "0.0.0.0")
+# options("plumber.apiHost" = "0.0.0.0")
 
 # debug
 # portNum <- 8028
